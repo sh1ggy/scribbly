@@ -59,3 +59,7 @@ struct Clear {
 struct STG_Results {
   guid id;
 }
+
+struct Ping {
+  string msg;
+}
