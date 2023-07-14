@@ -12,10 +12,10 @@ enum ClientMessageType {
   Vote = 15;
 
   // -- ADMIN
-  ADM_Auth = 25;
-  ADM_StageChange = 26;
-  ADM_Start = 27; // empty struct
-  ADM_End = 28;
+  Auth_ADM = 25;
+  StageChange_ADM = 26;
+  Start_ADM = 27; // empty struct
+  End_ADM = 28;
 }
 
 struct Vote {

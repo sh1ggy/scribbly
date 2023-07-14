@@ -20,12 +20,12 @@ enum ServerMessageType {
   Clear = 8; 
 
   // STAGES
-  STG_New = 28;
-  STG_AudienceLobby = 29; 
-  STG_Drawing = 30; // timer on client -- timer on client is single source of truth (server authoritative)
-  STG_Voting = 31; 
-  STG_Judging = 32; 
-  STG_Results = 33;
+  NewSTG = 28;
+  AudienceLobbySTG = 29; 
+  DrawingSTG = 30; // timer on client -- timer on client is single source of truth (server authoritative)
+  VotingSTG = 31; 
+  JudgingSTG = 32; 
+  ResultsSTG = 33;
 }
 
 struct DrawUpdate {

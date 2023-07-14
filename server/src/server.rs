@@ -234,7 +234,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
 
 async fn handle_client_message(msg_type : client::ClientMessageType, data: &[u8], conn: &mut ClientConnection) {
     match msg_type {
-        client::ClientMessageType::ADmStart=> {
+        client::ClientMessageType::StartADM=> {
             // let img = ImageData::deserialize(data).unwrap();
             let mut game = conn.game_ref.lock().unwrap();
             *game = Some(GameState {});

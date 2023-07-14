@@ -22,9 +22,10 @@ export enum ClientMessageType {
   FinishStroke = 3,
   Clear = 4,
   Vote = 15,
-  ADmStageChange = 26,
-  ADmStart = 27,
-  ADmEnd = 28,
+  AuthADM = 25,
+  StageChangeADM = 26,
+  StartADM = 27,
+  EndADM = 28,
 }
 
 export interface IVote extends BebopRecord {
@@ -136,12 +137,12 @@ export enum ServerMessageType {
   FinishStroke = 6,
   VoteUpdate = 7,
   Clear = 8,
-  STgNew = 28,
-  STgAudienceLobby = 29,
-  STgDrawing = 30,
-  STgVoting = 31,
-  STgJudging = 32,
-  STgResults = 33,
+  NewSTG = 28,
+  AudienceLobbySTG = 29,
+  DrawingSTG = 30,
+  VotingSTG = 31,
+  JudgingSTG = 32,
+  ResultsSTG = 33,
 }
 
 export interface IDrawUpdate extends BebopRecord {
@@ -248,20 +249,23 @@ export interface IGameState extends BebopRecord {
   id: Guid;
   stage: Stage;
   clients: Array<ClientType>;
-  drawing: Array<IStroke>;
+  drawingA: Array<IStroke>;
+  drawingB: Array<IStroke>;
 }
 
 export class GameState implements IGameState {
   public id: Guid;
   public stage: Stage;
   public clients: Array<ClientType>;
-  public drawing: Array<IStroke>;
+  public drawingA: Array<IStroke>;
+  public drawingB: Array<IStroke>;
 
   constructor(record: IGameState) {
     this.id = record.id;
     this.stage = record.stage;
     this.clients = record.clients;
-    this.drawing = record.drawing;
+    this.drawingA = record.drawingA;
+    this.drawingB = record.drawingB;
   }
 
   /**
@@ -292,7 +296,8 @@ export class GameState implements IGameState {
     BebopTypeGuard.ensureGuid(record.id)
     BebopTypeGuard.ensureEnum(record.stage, Stage);
     BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
-    BebopTypeGuard.ensureArray(record.drawing, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureArray(record.drawingA, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureArray(record.drawingB, Stroke.validateCompatibility);
   }
 
   /**
@@ -336,10 +341,17 @@ export class GameState implements IGameState {
       }
     }
     {
-      const length0 = record.drawing.length;
+      const length0 = record.drawingA.length;
       view.writeUint32(length0);
       for (let i0 = 0; i0 < length0; i0++) {
-        Stroke.encodeInto(record.drawing[i0], view)
+        Stroke.encodeInto(record.drawingA[i0], view)
+      }
+    }
+    {
+      const length0 = record.drawingB.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        Stroke.encodeInto(record.drawingB[i0], view)
       }
     }
     const after = view.length;
@@ -377,11 +389,22 @@ export class GameState implements IGameState {
         field3[i0] = x0;
       }
     }
+    let field4: Array<IStroke>;
+    {
+      let length0 = view.readUint32();
+      field4 = new Array<IStroke>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: IStroke;
+        x0 = Stroke.readFrom(view);
+        field4[i0] = x0;
+      }
+    }
     let message: IGameState = {
       id: field0,
       stage: field1,
       clients: field2,
-      drawing: field3,
+      drawingA: field3,
+      drawingB: field4,
     };
     return new GameState(message);
   }
@@ -858,13 +881,16 @@ export class STgResults implements ISTgResults {
 
 export interface IPing extends BebopRecord {
   msg: string;
+  test: boolean;
 }
 
 export class Ping implements IPing {
   public msg: string;
+  public test: boolean;
 
   constructor(record: IPing) {
     this.msg = record.msg;
+    this.test = record.test;
   }
 
   /**
@@ -893,6 +919,7 @@ export class Ping implements IPing {
    */
   public static validateCompatibility(record: IPing): void {
     BebopTypeGuard.ensureString(record.msg)
+    BebopTypeGuard.ensureBoolean(record.test)
   }
 
   /**
@@ -927,6 +954,7 @@ export class Ping implements IPing {
   public static encodeInto(record: IPing, view: BebopView): number {
     const before = view.length;
     view.writeString(record.msg);
+    view.writeByte(Number(record.test));
     const after = view.length;
     return after - before;
   }
@@ -940,8 +968,11 @@ export class Ping implements IPing {
   public static readFrom(view: BebopView): IPing {
     let field0: string;
     field0 = view.readString();
+    let field1: boolean;
+    field1 = !!view.readByte();
     let message: IPing = {
       msg: field0,
+      test: field1,
     };
     return new Ping(message);
   }
