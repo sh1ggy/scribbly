@@ -9,7 +9,8 @@ const initGameState: IGameState = {
   id: Guid.newGuid(),
   stage: Stage.GamerSelect,
   clients: [],
-  drawing: []
+  drawingA: [],
+  drawingB: []
 }
 
 const initUser: IClientTypeDTO = {
