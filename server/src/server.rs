@@ -44,6 +44,7 @@ struct Gamer {
 enum ClientType {
     Gamer(Gamer),
     Audience,
+    Admin,
     Unknown,
 }
 
@@ -150,12 +151,9 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
         conn.client_type = ClientType::Audience;
     }
 
-    // From StreamExt
-    // WebsocketStream and TcpStream both dont have Send on them, so either we use an async Mutex that we await on
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
     let (tx, mut rx) = unbounded_channel::<Message>();
 
-    // conn.clients_ref.lock().unwrap().push(tx);
     conn.clients_ref.lock().unwrap().insert(conn.client_id, tx);
 
     let ping = api::Ping {
