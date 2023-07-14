@@ -1,26 +1,35 @@
 'use client'
-import { IPing, Ping, ServerMessageType } from "@/lib/schemas";
-import { deserialize } from "@/utils/bopUtils";
+import { ClientMessageType, IPing, Ping, ServerMessageType } from "@/lib/schemas";
+import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useEffect } from "react";
 
 export default function Admin() {
-  function handleGame() {
-
+  function handlePing(msg: IPing) {
+    console.log({msg});
+    let sendPing = Ping.encode({
+      msg: `sup from client`,
+      test: false
+    }); 
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendPing, ClientMessageType.Ping))
   }
-  function handleAdmin(msg: IPing) {
-
+  function handleOpen() {
+    let sendAdminAuth = new Uint8Array();
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendAdminAuth, ClientMessageType.AuthADM));
   }
   useEffect(() => {
+    window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
-        case ServerMessageType.ClientTypeDTO:
-          handleAdmin(Ping.decode(data));
+        case ServerMessageType.Ping:
+          handlePing(Ping.decode(data));
+          return;
       }
     }
-    window.SLUGMA_SOCK.addEventListener('message', message);
+    window.SCRIBBLE_SOCK.addEventListener('open', handleOpen);
+    window.SCRIBBLE_SOCK.addEventListener('message', message);
     return () => {
-      window.SLUGMA_SOCK.removeEventListener('message', message);
+      window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
 
@@ -31,7 +40,6 @@ export default function Admin() {
         <button
           onClick={(e) => {
             e.preventDefault();
-            handleGame();
           }}
           className="btn">Start/Restart Game</button>
         <button className="btn">Switch Stage</button>

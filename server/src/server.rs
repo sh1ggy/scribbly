@@ -207,10 +207,16 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
 
                             let mut data = msg.into_data();
                             let op_code_buf = &data[0..4];
-                            let op_code = u32::from_le_bytes(op_code_buf.try_into().unwrap());
-                            let op_code = client::ClientMessageType::try_from(op_code).unwrap_or(client::ClientMessageType::Ping);
-                            let data_buf = &mut data[4..];
-                            handle_client_message(op_code, data_buf, &mut conn).await;
+                            let op_code_number = u32::from_le_bytes(op_code_buf.try_into().unwrap());
+                            if let Ok(op_code) = client::ClientMessageType::try_from(op_code_number) {
+                                
+                                let data_buf = &mut data[4..];
+                                handle_client_message(op_code, data_buf, &mut conn).await;
+                            }
+                            else {
+                                println!("Bad msg type {:?}",op_code_number );
+                            }
+                            
 
                         }
                         else if msg.is_close() {
@@ -234,6 +240,11 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
 
 async fn handle_client_message(msg_type : client::ClientMessageType, data: &[u8], conn: &mut ClientConnection) {
     match msg_type {
+        client::ClientMessageType::Ping => {
+            let ping = api::Ping::deserialize(data).unwrap();
+
+            println!("Got ping {:?}", ping);
+        }
         client::ClientMessageType::StartADM=> {
             // let img = ImageData::deserialize(data).unwrap();
             let mut game = conn.game_ref.lock().unwrap();
@@ -244,7 +255,12 @@ async fn handle_client_message(msg_type : client::ClientMessageType, data: &[u8]
 
             // conn.broadcast_message(&msg).await;
         },
-        _=> println!("Got unknown message"),
+        client::ClientMessageType::AuthADM => {
+            println!("Upgrading client number {:?} to admin", conn.client_id);
+            conn.client_type = ClientType::Admin;
+        }
+
+        _=> println!("Unhandled message {:?}", msg_type),
     }
 }
 

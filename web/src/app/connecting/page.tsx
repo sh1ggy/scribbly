@@ -26,8 +26,7 @@ export default async function Game() {
   }
 
   useEffect(() => {
-    // Needs to be initialized here instead of layout since this useEffect runs first, since this is a child
-    window.SLUGMA_SOCK = new WebSocket('ws://localhost:8001');
+    window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
 
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
@@ -40,9 +39,9 @@ export default async function Game() {
           return;
       }
     }
-    window.SLUGMA_SOCK.addEventListener('message', message);
+    window.SCRIBBLE_SOCK.addEventListener('message', message);
     return () => {
-      window.SLUGMA_SOCK.removeEventListener('message', message);
+      window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
   return (

@@ -34,9 +34,9 @@ export default function Audience() {
           setVoting(true);
       }
     }
-    window.SLUGMA_SOCK.addEventListener('message', message);
+    window.SCRIBBLE_SOCK.addEventListener('message', message);
     return () => {
-      window.SLUGMA_SOCK.removeEventListener('message', message);
+      window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
 
