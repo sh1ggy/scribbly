@@ -63,3 +63,9 @@ struct STG_Results {
 struct Ping {
   string msg;
 }
+
+struct ClientTypeDTO {
+  uint8 gamerId; 
+  uint32 id;
+  ClientType ctype;
+}
