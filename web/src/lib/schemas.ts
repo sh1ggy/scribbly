@@ -146,16 +146,19 @@ export enum ServerMessageType {
 }
 
 export interface IDrawUpdate extends BebopRecord {
-  cursor: ICursorLocation;
+  prevPoint: ICoord;
+  currentPoint: ICoord;
   gamer: GamerChoice;
 }
 
 export class DrawUpdate implements IDrawUpdate {
-  public cursor: ICursorLocation;
+  public prevPoint: ICoord;
+  public currentPoint: ICoord;
   public gamer: GamerChoice;
 
   constructor(record: IDrawUpdate) {
-    this.cursor = record.cursor;
+    this.prevPoint = record.prevPoint;
+    this.currentPoint = record.currentPoint;
     this.gamer = record.gamer;
   }
 
@@ -184,7 +187,8 @@ export class DrawUpdate implements IDrawUpdate {
    * Validates that the specified dynamic object can become an instance of {@link DrawUpdate}.
    */
   public static validateCompatibility(record: IDrawUpdate): void {
-    CursorLocation.validateCompatibility(record.cursor);
+    Coord.validateCompatibility(record.prevPoint);
+    Coord.validateCompatibility(record.currentPoint);
     BebopTypeGuard.ensureEnum(record.gamer, GamerChoice);
   }
 
@@ -192,7 +196,8 @@ export class DrawUpdate implements IDrawUpdate {
    * Unsafely creates an instance of {@link DrawUpdate} from the specified dynamic object. No type checking is performed.
    */
   public static unsafeCast(record: any): IDrawUpdate {
-      record.cursor = CursorLocation.unsafeCast(record.cursor);
+      record.prevPoint = Coord.unsafeCast(record.prevPoint);
+      record.currentPoint = Coord.unsafeCast(record.currentPoint);
       return new DrawUpdate(record);
   }
 
@@ -220,7 +225,8 @@ export class DrawUpdate implements IDrawUpdate {
 
   public static encodeInto(record: IDrawUpdate, view: BebopView): number {
     const before = view.length;
-    CursorLocation.encodeInto(record.cursor, view)
+    Coord.encodeInto(record.prevPoint, view)
+    Coord.encodeInto(record.currentPoint, view)
     view.writeUint32(record.gamer);
     const after = view.length;
     return after - before;
@@ -233,13 +239,16 @@ export class DrawUpdate implements IDrawUpdate {
   }
 
   public static readFrom(view: BebopView): IDrawUpdate {
-    let field0: ICursorLocation;
-    field0 = CursorLocation.readFrom(view);
-    let field1: GamerChoice;
-    field1 = view.readUint32() as GamerChoice;
+    let field0: ICoord;
+    field0 = Coord.readFrom(view);
+    let field1: ICoord;
+    field1 = Coord.readFrom(view);
+    let field2: GamerChoice;
+    field2 = view.readUint32() as GamerChoice;
     let message: IDrawUpdate = {
-      cursor: field0,
-      gamer: field1,
+      prevPoint: field0,
+      currentPoint: field1,
+      gamer: field2,
     };
     return new DrawUpdate(message);
   }
@@ -1291,5 +1300,90 @@ export enum ClientType {
   Audience = 2,
   Admin = 3,
   Unknown = 4,
+}
+
+export interface IEmpty extends BebopRecord {
+}
+
+export class Empty implements IEmpty {
+
+  constructor(record: IEmpty) {
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return Empty.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IEmpty): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    Empty.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link Empty}.
+   */
+  public static validateCompatibility(record: IEmpty): void {
+
+  }
+
+  /**
+   * Unsafely creates an instance of {@link Empty} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IEmpty {
+      return new Empty(record);
+  }
+
+  /**
+   * Creates a new {@link Empty} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IEmpty {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`Empty.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    Empty.validateCompatibility(parsed);
+    return Empty.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return Empty.encode(this);
+  }
+
+  public static encode(record: IEmpty): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    Empty.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IEmpty, view: BebopView): number {
+    const before = view.length;
+
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IEmpty {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return Empty.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IEmpty {
+    let message: IEmpty = {
+    };
+    return new Empty(message);
+  }
 }
 

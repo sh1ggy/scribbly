@@ -29,7 +29,8 @@ enum ServerMessageType {
 }
 
 struct DrawUpdate {
-  CursorLocation cursor;
+  Coord prevPoint;
+  Coord currentPoint;
   GamerChoice gamer;
 }
 

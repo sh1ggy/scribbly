@@ -3,17 +3,18 @@ import { useContainerSize } from "@/hooks/useContainerSize";
 import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { IStroke, ICursorLocation, ServerMessageType } from "@/lib/schemas";
-import { deserialize } from "@/utils/bopUtils";
+import { IStroke, ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote } from "@/lib/schemas";
+import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function Audience() {
+  const [color, setColor] = useState<string>('#000')
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(500);
-  
+
   const router = useRouter();
 
   const matchesMd = useMediaQuery("(min-width: 768px)");
@@ -23,13 +24,38 @@ export default function Audience() {
 
   const [voting, setVoting] = useState(false);
 
+  function handleAudienceDrawing(drawData: IDrawUpdate) {
+    if (drawData.gamer == GamerChoice.GamerA) {
+      const canvas = canvasRef1.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      drawLine({ prevPoint: drawData.prevPoint, currentPoint: drawData.currentPoint, ctx, color })
+    }
+    if (drawData.gamer == GamerChoice.GamerB) {
+      const canvas = canvasRef2.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      drawLine({ prevPoint: drawData.prevPoint, currentPoint: drawData.currentPoint, ctx, color })
+    }
+  }
+
+  function handleSendVote(userChoice: GamerChoice) {
+    const sendVote = Vote.encode({
+      choice: userChoice,
+    });
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
+  }
+
   useEffect(() => {
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
         case ServerMessageType.DrawUpdate:
           console.log("DRAWING" + data);
-        case ServerMessageType.STgVoting:
+          handleAudienceDrawing(DrawUpdate.decode(data));
+        case ServerMessageType.VotingSTG:
           console.log("COMMENCE VOTING" + data);
           setVoting(true);
       }
@@ -64,6 +90,7 @@ export default function Audience() {
             <button
               onClick={(e) => {
                 e.preventDefault();
+                handleSendVote(GamerChoice.GamerA);
               }}
               className="btn border-none text-xs md:text-md">Vote</button>
           }
@@ -77,7 +104,10 @@ export default function Audience() {
           />
           {voting &&
             <button
-              onClick={() => console.log("VOTE RED")}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSendVote(GamerChoice.GamerB);
+              }}
               className="btn border-none text-xs md:text-md">Vote</button>
           }
         </div>

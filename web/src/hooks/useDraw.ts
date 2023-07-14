@@ -1,7 +1,10 @@
 import { Draw, Point } from '@/utils/drawLine'
 import { useEffect, useRef, useState } from 'react'
 
-export const useDraw = (onDraw: ({ ctx, currentPoint, prevPoint }: Draw) => void) => {
+type DrawFunc = (draw: Draw)=> void
+type CursorUpFunc = () => void
+
+export const useDraw = (onDraw: DrawFunc, onCursorUp: CursorUpFunc) => {
   const [mouseDown, setMouseDown] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const prevPoint = useRef<null | Point>(null)
@@ -57,6 +60,7 @@ export const useDraw = (onDraw: ({ ctx, currentPoint, prevPoint }: Draw) => void
     const cursorUpHandler = () => {
       setMouseDown(false)
       prevPoint.current = null
+      onCursorUp();
     }
 
     const cursorDownHandler = (e: { preventDefault: () => void }) => {

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useDraw } from "@/hooks/useDraw";
 import { Draw, Point, drawLine } from '@/utils/drawLine'
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ClientMessageType, ClientTypeDTO, CursorLocation } from "@/lib/schemas";
+import { getDTOBuffer } from "@/utils/bopUtils";
 
 type DrawLineProps = {
   prevPoint: Point | null
@@ -12,15 +14,28 @@ type DrawLineProps = {
 
 export default function Gamer() {
   const [color, setColor] = useState<string>('#000')
-  const { canvasRef, clear } = useDraw(createLine);
+  const { canvasRef, clear } = useDraw(createLine, cursorUp);
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(0);
 
+  function cursorUp() {
+    console.log("STROKE COMPLETE")
+    const sendStroke = new Uint8Array();
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendStroke, ClientMessageType.FinishStroke))
+  }
+
   function createLine({ prevPoint, currentPoint, ctx }: Draw) {
     // socket.emit('draw-line', { prevPoint, currentPoint, color })
-    console.log("DRAW LINE")
-    drawLine({ prevPoint, currentPoint, ctx, color })
+    console.log("DRAW LINE");
+    drawLine({ prevPoint, currentPoint, ctx, color });
+    const cursorLocation = CursorLocation.encode({
+      currentPoint: {
+        x: currentPoint.x,
+        y: currentPoint.y
+      }
+    })
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(cursorLocation, ClientMessageType.CursorLocation));
   }
 
   useLayoutEffect(() => {
