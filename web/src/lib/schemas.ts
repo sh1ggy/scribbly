@@ -137,7 +137,7 @@ export enum ServerMessageType {
   FinishStroke = 6,
   VoteUpdate = 7,
   Clear = 8,
-  Start = 28,
+  Restart = 28,
   AudienceLobbySTG = 29,
   DrawingSTG = 30,
   VotingSTG = 31,
