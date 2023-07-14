@@ -23,7 +23,7 @@ export default function DashboardLayout({
             <li className={`step ${gameState.stage == Stage.GamerSelect &&'step-secondary'}`}>Start</li>
             <li className={`step ${gameState.stage == Stage.Drawing &&'step-secondary'}`}>Drawing</li>
             <li className={`step ${gameState.stage == Stage.Voting &&'step-secondary'}`}>Voting</li>
-            <li className={`step ${gameState.stage == Stage.Judging &&'step-secondary'}`}>Collate</li>
+            <li className={`step ${gameState.stage == Stage.Judging &&'step-secondary'}`}>Judging</li>
             <li className={`step ${gameState.stage == Stage.Results &&'step-secondary'}`}>Results</li>
           </ul>
         }
