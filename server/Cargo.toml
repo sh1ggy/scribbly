@@ -9,6 +9,7 @@ edition = "2021"
 bebop = "2.8.6"
 rand = "0.8.5"
 tokio = "1.29.1"
+futures-util = { version = "0.3", default-features = false, features = ["async-await", "sink", "std"] }
 
 [build-dependencies]
 bebop-tools = "2.8.6"
