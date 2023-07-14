@@ -64,6 +64,7 @@ struct STG_Results {
 
 struct Ping {
   string msg;
+  bool test;
 }
 
 struct ClientTypeDTO {
