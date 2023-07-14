@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,7 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <div className='flex items-center justify-center'>
+          {/* Perhaps this link is also fuckign with the shifting */}
+          <Link className='transition-colors hover:bg-slate-500 duration-500 py-2 z-10 w-full text-center bg-primary' href="/">
+            scribbly
+          </Link>
+        </div>
+        {children}
+      </body>
     </html>
   )
 }
