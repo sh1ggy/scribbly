@@ -16,6 +16,7 @@ export const drawLine = ({ prevPoint, currentPoint, ctx, color }: DrawLineProps)
   const lineColor = color
   const lineWidth = 5
 
+  // If no previous point, draw from current to current 
   let startPoint = prevPoint ?? currentPoint
   ctx.beginPath()
   ctx.lineWidth = lineWidth

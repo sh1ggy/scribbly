@@ -1,4 +1,5 @@
 mod handlers;
+mod client_connection;
 
 use std::{
     collections::HashMap,
@@ -22,7 +23,7 @@ use crate::{
     ml,
 };
 
-use handlers::get_dto_binary;
+use handlers::{get_dto_binary, handle_client_message};
 
 use bebop::prelude::*;
 
@@ -32,7 +33,7 @@ const MAX_PLAYERS: usize = 50;
 const MAX_BROADCAST_MESSAGES: usize = 100;
 
 #[derive(Debug, Clone)]
-enum ClientType {
+pub enum ClientType {
     Gamer(u8),
     Audience,
     Admin,
@@ -61,14 +62,15 @@ impl ClientType {
     }
 }
 
+type Stroke = [Vec<u8>;2];
 
 #[derive(Debug)]
-struct GameState {
+pub struct GameState {
     clients: HashMap<u32, ClientType>,
+    drawings: [Vec<Stroke>; 2],
 }
-
 #[derive(Debug)]
-struct ClientConnection {
+pub struct ClientConnection {
     pub clients_ref: Arc<Mutex<Clients>>,
     pub client_type: ClientType,
     pub game_ref: Arc<Mutex<Option<GameState>>>,
@@ -241,45 +243,4 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
         }
     }
     Ok(())
-}
-
-async fn handle_client_message(
-    msg_type: client::ClientMessageType,
-    data: &[u8],
-    conn: &mut ClientConnection,
-) {
-    // Admin handlers
-
-    // Game handlers
-    match msg_type {
-        client::ClientMessageType::Ping => {
-            let ping = api::Ping::deserialize(data).unwrap();
-
-            println!("Got ping {:?}", ping);
-        }
-        client::ClientMessageType::StartADM => {
-            if let ClientType::Admin = conn.client_type {
-                // unscope the mutex before await because the future can be across 2 threads
-                {
-                    let mut game = conn.game_ref.lock().unwrap();
-                    *game = Some(GameState {
-                        clients: HashMap::new(),
-                    });
-                }
-                let e = common::Empty {};
-                let msg = get_dto_binary(e, api::ServerMessageType::Start as u32);
-                let msg = Message::Binary(msg);
-                conn.broadcast_message(&msg).await;
-                println!("Starting game");
-            } else {
-                println!("Unauthorized start from {:?}", conn.client_id);
-            }
-        }
-        client::ClientMessageType::AuthADM => {
-            println!("Upgrading client number {:?} to admin", conn.client_id);
-            conn.client_type = ClientType::Admin;
-        }
-
-        _ => println!("Unhandled message {:?}", msg_type),
-    }
 }
