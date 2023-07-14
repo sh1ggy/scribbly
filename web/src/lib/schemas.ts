@@ -1324,8 +1324,8 @@ export class Coord implements ICoord {
    * Validates that the specified dynamic object can become an instance of {@link Coord}.
    */
   public static validateCompatibility(record: ICoord): void {
-    BebopTypeGuard.ensureUint32(record.x)
-    BebopTypeGuard.ensureUint32(record.y)
+    BebopTypeGuard.ensureFloat(record.x)
+    BebopTypeGuard.ensureFloat(record.y)
   }
 
   /**
@@ -1359,8 +1359,8 @@ export class Coord implements ICoord {
 
   public static encodeInto(record: ICoord, view: BebopView): number {
     const before = view.length;
-    view.writeUint32(record.x);
-    view.writeUint32(record.y);
+    view.writeFloat32(record.x);
+    view.writeFloat32(record.y);
     const after = view.length;
     return after - before;
   }
@@ -1373,9 +1373,9 @@ export class Coord implements ICoord {
 
   public static readFrom(view: BebopView): ICoord {
     let field0: number;
-    field0 = view.readUint32();
+    field0 = view.readFloat32();
     let field1: number;
-    field1 = view.readUint32();
+    field1 = view.readFloat32();
     let message: ICoord = {
       x: field0,
       y: field1,

@@ -12,9 +12,9 @@ export default async function Game() {
   // Get the atom for user
   const [user, setUser] = useAtom(userStateAtom);
   const router = useRouter();
-  
+
   function handlePing(ping: IPing) {
-    console.log({ping});
+    console.log({ ping });
   }
 
   function handleClientType(dto: IClientTypeDTO) {
@@ -36,6 +36,10 @@ export default async function Game() {
           return;
         case ServerMessageType.ClientTypeDTO:
           handleClientType(ClientTypeDTO.decode(data));
+          return;
+        case ServerMessageType.Start:
+          console.log("START");
+          router.push("/");
           return;
       }
     }

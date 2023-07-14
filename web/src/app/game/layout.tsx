@@ -29,11 +29,12 @@ export default function DashboardLayout({
     switch (type) {
       case ServerMessageType.Ping: 
         handlePing(Ping.decode(data));
+        return;
       case ServerMessageType.GameState:
         console.log("GAME STATE" + data);
         handleGameState(GameState.decode(data));
-      case ServerMessageType.Start:
-        router.push("/");
+        return;
+
     }
   }
 
@@ -54,6 +55,7 @@ export default function DashboardLayout({
       window.SCRIBBLE_SOCK.removeEventListener('open', openConnection);
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
       window.SCRIBBLE_SOCK.removeEventListener('error', error);
+      window.SCRIBBLE_SOCK.close();
     }
   }, [])
 

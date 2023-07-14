@@ -31,8 +31,8 @@ export default function Gamer() {
     drawLine({ prevPoint, currentPoint, ctx, color });
     const cursorLocation = CursorLocation.encode({
       currentPoint: {
-        x: currentPoint.x,
-        y: currentPoint.y
+        x: currentPoint.x / canvasSize,
+        y: currentPoint.y / canvasSize
       }
     })
     window.SCRIBBLE_SOCK.send(getDTOBuffer(cursorLocation, ClientMessageType.CursorLocation));

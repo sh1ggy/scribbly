@@ -1,10 +1,14 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 use bebop::{Record, SubRecord};
 use tungstenite::Message;
 
 use crate::{
-    gen_schemas::{api, client, common},
+    gen_schemas::{
+        api::{self, DrawUpdate},
+        client,
+        common::{self, Coord},
+    },
     server::GameState,
 };
 
@@ -55,10 +59,6 @@ async fn handle_admin_message(
                 {
                     let mut game = conn.game_ref.lock().unwrap();
                     let mut drawings = [Vec::new(), Vec::new()];
-                    drawings[0].push([Vec::new(), Vec::new()]);
-                    drawings[1].push([Vec::new(), Vec::new()]);
-                    
-
                     *game = Some(GameState {
                         clients: HashMap::new(),
                         drawings,
@@ -66,6 +66,7 @@ async fn handle_admin_message(
                 }
                 let e = common::Empty {};
                 let msg = get_dto_binary(e, api::ServerMessageType::Start as u32);
+                println!("Sending start message {:?} bytes", msg);
                 let msg = Message::Binary(msg);
                 conn.broadcast_message(&msg).await;
                 println!("Starting game");
@@ -73,11 +74,6 @@ async fn handle_admin_message(
                 println!("Unauthorized start from {:?}", conn.client_id);
             }
         }
-        client::ClientMessageType::AuthADM => {
-            println!("Upgrading client number {:?} to admin", conn.client_id);
-            conn.client_type = ClientType::Admin;
-        }
-
         _ => println!("Unhandled message for admin {:?}", msg_type),
     }
 }
@@ -95,42 +91,66 @@ async fn handle_game_message(
         }
         client::ClientMessageType::CursorLocation => {
             let cursor = client::CursorLocation::deserialize(data).unwrap();
-            // Run normalization calcs here
-            {
-                let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
-                    return;
-                };
-                let ClientType::Gamer(order) = conn.client_type else {
-                    return;
-                };
-
-                let mut drawing = &game.drawings[order as usize];
-
-                if let Some(coord) = drawing.last() {
-
-                }
-
-                else {
-                    // drawing.push(common::Coord {
-                    //     x: cursor.x,
-                    //     y: cursor.y,
-                    // });
-                }
-            }
-            // let draw = api::DrawUpdate {
-                 
-            //     x: cursor.x,
-            //     y: cursor.y,
-            // };
-            // THIS DOESNT WORK HEEEEELP
+            let server_coord = common::Coord {
+                x: cursor.current_point.x,
+                y: cursor.current_point.y,
+            };
+            let draw_update = save_coord_to_game_state(server_coord, conn);
 
             let msg = get_dto_binary(cursor, api::ServerMessageType::DrawUpdate as u32);
             let msg = Message::Binary(msg);
             conn.broadcast_message(&msg).await;
         }
+
+        client::ClientMessageType::AuthADM => {
+            println!("Upgrading client number {:?} to admin", conn.client_id);
+            conn.client_type = ClientType::Admin;
+        }
         client::ClientMessageType::FinishStroke => todo!(),
         client::ClientMessageType::Clear => todo!(),
         client::ClientMessageType::Vote => todo!(),
         _ => println!("Unhandled message for game {:?}", msg_type),
+    }
+}
+
+fn save_coord_to_game_state(coord: Coord, conn: &mut ClientConnection) -> Option<DrawUpdate> {
+    let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+        return None;
+    };
+    let ClientType::Gamer(order) = conn.client_type else {
+        return None;
+    };
+
+    let mut drawing = &mut game.drawings[order as usize];
+
+    if let Some(stroke) = drawing.last_mut() {
+        let mut ret_val = None;
+
+        if let Some(prev_coord) = stroke.last() {
+            let prev_point = api::Coord {
+                x: prev_coord.x,
+                y: prev_coord.y,
+            };
+
+            let current_point = api::Coord {
+                x: coord.x,
+                y: coord.y,
+            };
+
+            ret_val = Some(DrawUpdate {
+                prev_point,
+                current_point,
+                gamer: api::GamerChoice::try_from(order as u32).unwrap(),
+            })
+        } else {
+            return None;
+        }
+
+        stroke.push(coord);
+        ret_val
+    } else {
+        // If no strokes yet in the drawing, means this is our first point
+        drawing.push(vec![coord]);
+        None
     }
 }

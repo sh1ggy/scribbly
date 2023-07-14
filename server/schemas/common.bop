@@ -2,8 +2,8 @@ const uint32 AUDIENCE_LOBBY_TIME = 30000;
 const uint32 DRAWING_TIME = 60000;
 
 struct Coord {
-  uint32 x;
-  uint32 y;
+  float32 x;
+  float32 y;
 }
 
 struct CursorLocation {

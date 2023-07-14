@@ -19,7 +19,7 @@ use tokio_tungstenite::{
 
 // Just so we dont have to type out crate::ml every time
 use crate::{
-    gen_schemas::{api, client, common},
+    gen_schemas::{api, client, common::{self, Coord}},
     ml,
 };
 
@@ -64,10 +64,14 @@ impl ClientType {
 
 type Stroke = [Vec<u8>;2];
 
+struct CSVData {
+    pub drawing: Vec<Stroke>,
+}
+
 #[derive(Debug)]
 pub struct GameState {
     clients: HashMap<u32, ClientType>,
-    drawings: [Vec<Stroke>; 2],
+    drawings: [Vec<Vec<Coord>>; 2],
 }
 #[derive(Debug)]
 pub struct ClientConnection {
