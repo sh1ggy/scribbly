@@ -19,7 +19,7 @@ export default function Home() {
       }
       <div className='flex flex-col'>
         {/* USE A TAG HERE INSTEAD OF LINK AND REPLACE SO THAT WE DONT ROUTE BACK TO GAME INDEX */}
-        <a href="/game" >game</a>
+        <a href="/connecting" >game</a>
         <Link href="/results">results</Link>
         <Link href="/admin">admin</Link>
       </div>

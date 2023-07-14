@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { Provider, useAtom } from "jotai";
-import { GameState, IGameState, ServerMessageType, Stage } from "@/lib/schemas";
+import { GameState, IGameState, IPing, Ping, ServerMessageType, Stage } from "@/lib/schemas";
 import { gameStateAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 
@@ -16,14 +16,19 @@ export default function DashboardLayout({
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
 
+  function handlePing(ping: IPing) {
+    console.log({ping});
+  }
   function handleGameState(gameState: IGameState) {
-    console.log(gameState);
+    console.log({gameState});
     setGameState(gameState);
   }
 
   const message = async (event: MessageEvent<Blob>) => {
     const { type, data } = await deserialize(event);
     switch (type) {
+      case ServerMessageType.Ping: 
+        handlePing(Ping.decode(data));
       case ServerMessageType.GameState:
         console.log("GAME STATE" + data);
         handleGameState(GameState.decode(data));
