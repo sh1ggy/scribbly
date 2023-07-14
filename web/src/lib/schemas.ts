@@ -615,14 +615,14 @@ export class ClientJoined implements IClientJoined {
   }
 }
 
-export interface ISTgNew extends BebopRecord {
+export interface INewSTG extends BebopRecord {
   id: Guid;
 }
 
-export class STgNew implements ISTgNew {
+export class NewSTG implements INewSTG {
   public id: Guid;
 
-  constructor(record: ISTgNew) {
+  constructor(record: INewSTG) {
     this.id = record.id;
   }
 
@@ -630,13 +630,13 @@ export class STgNew implements ISTgNew {
    * Serializes the current instance into a JSON-Over-Bebop string
    */
   public toJSON(): string {
-    return STgNew.encodeToJSON(this);
+    return NewSTG.encodeToJSON(this);
   }
 
   /**
    * Serializes the specified object into a JSON-Over-Bebop string
    */
-  public static encodeToJSON(record: ISTgNew): string {
+  public static encodeToJSON(record: INewSTG): string {
     return JSON.stringify(record, BebopJson.replacer);
   }
 
@@ -644,65 +644,252 @@ export class STgNew implements ISTgNew {
    * Validates that the runtime types of members in the current instance are correct.
    */
   public validateTypes(): void {
-    STgNew.validateCompatibility(this);
+    NewSTG.validateCompatibility(this);
   }
 
   /**
-   * Validates that the specified dynamic object can become an instance of {@link STgNew}.
+   * Validates that the specified dynamic object can become an instance of {@link NewSTG}.
    */
-  public static validateCompatibility(record: ISTgNew): void {
+  public static validateCompatibility(record: INewSTG): void {
     BebopTypeGuard.ensureGuid(record.id)
   }
 
   /**
-   * Unsafely creates an instance of {@link STgNew} from the specified dynamic object. No type checking is performed.
+   * Unsafely creates an instance of {@link NewSTG} from the specified dynamic object. No type checking is performed.
    */
-  public static unsafeCast(record: any): ISTgNew {
-      return new STgNew(record);
+  public static unsafeCast(record: any): INewSTG {
+      return new NewSTG(record);
   }
 
   /**
-   * Creates a new {@link STgNew} instance from a JSON-Over-Bebop string. Type checking is performed.
+   * Creates a new {@link NewSTG} instance from a JSON-Over-Bebop string. Type checking is performed.
    */
-  public static fromJSON(json: string): ISTgNew {
+  public static fromJSON(json: string): INewSTG {
     if (typeof json !== 'string' || json.trim().length === 0) {
-      throw new BebopRuntimeError(`STgNew.fromJSON: expected string`);
+      throw new BebopRuntimeError(`NewSTG.fromJSON: expected string`);
     }
     const parsed = JSON.parse(json, BebopJson.reviver);
-    STgNew.validateCompatibility(parsed);
-    return STgNew.unsafeCast(parsed);
+    NewSTG.validateCompatibility(parsed);
+    return NewSTG.unsafeCast(parsed);
   }
   public encode(): Uint8Array {
-    return STgNew.encode(this);
+    return NewSTG.encode(this);
   }
 
-  public static encode(record: ISTgNew): Uint8Array {
+  public static encode(record: INewSTG): Uint8Array {
     const view = BebopView.getInstance();
     view.startWriting();
-    STgNew.encodeInto(record, view);
+    NewSTG.encodeInto(record, view);
     return view.toArray();
   }
 
-  public static encodeInto(record: ISTgNew, view: BebopView): number {
+  public static encodeInto(record: INewSTG, view: BebopView): number {
     const before = view.length;
     view.writeGuid(record.id);
     const after = view.length;
     return after - before;
   }
 
-  public static decode(buffer: Uint8Array): ISTgNew {
+  public static decode(buffer: Uint8Array): INewSTG {
     const view = BebopView.getInstance();
     view.startReading(buffer);
-    return STgNew.readFrom(view);
+    return NewSTG.readFrom(view);
   }
 
-  public static readFrom(view: BebopView): ISTgNew {
+  public static readFrom(view: BebopView): INewSTG {
     let field0: Guid;
     field0 = view.readGuid();
-    let message: ISTgNew = {
+    let message: INewSTG = {
       id: field0,
     };
-    return new STgNew(message);
+    return new NewSTG(message);
+  }
+}
+
+export interface IResultsSTG extends BebopRecord {
+  id: Guid;
+  outcome: GamerChoice;
+  votes: Array<GamerChoice>;
+  drawingA: Array<IStroke>;
+  drawingB: Array<IStroke>;
+  clients: Array<ClientType>;
+}
+
+export class ResultsSTG implements IResultsSTG {
+  public id: Guid;
+  public outcome: GamerChoice;
+  public votes: Array<GamerChoice>;
+  public drawingA: Array<IStroke>;
+  public drawingB: Array<IStroke>;
+  public clients: Array<ClientType>;
+
+  constructor(record: IResultsSTG) {
+    this.id = record.id;
+    this.outcome = record.outcome;
+    this.votes = record.votes;
+    this.drawingA = record.drawingA;
+    this.drawingB = record.drawingB;
+    this.clients = record.clients;
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return ResultsSTG.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IResultsSTG): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    ResultsSTG.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link ResultsSTG}.
+   */
+  public static validateCompatibility(record: IResultsSTG): void {
+    BebopTypeGuard.ensureGuid(record.id)
+    BebopTypeGuard.ensureEnum(record.outcome, GamerChoice);
+    BebopTypeGuard.ensureArray(record.votes, (value) => BebopTypeGuard.ensureEnum(value, GamerChoice));
+    BebopTypeGuard.ensureArray(record.drawingA, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureArray(record.drawingB, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
+  }
+
+  /**
+   * Unsafely creates an instance of {@link ResultsSTG} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IResultsSTG {
+      return new ResultsSTG(record);
+  }
+
+  /**
+   * Creates a new {@link ResultsSTG} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IResultsSTG {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`ResultsSTG.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    ResultsSTG.validateCompatibility(parsed);
+    return ResultsSTG.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return ResultsSTG.encode(this);
+  }
+
+  public static encode(record: IResultsSTG): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    ResultsSTG.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IResultsSTG, view: BebopView): number {
+    const before = view.length;
+    view.writeGuid(record.id);
+    view.writeUint32(record.outcome);
+    {
+      const length0 = record.votes.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        view.writeUint32(record.votes[i0]);
+      }
+    }
+    {
+      const length0 = record.drawingA.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        Stroke.encodeInto(record.drawingA[i0], view)
+      }
+    }
+    {
+      const length0 = record.drawingB.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        Stroke.encodeInto(record.drawingB[i0], view)
+      }
+    }
+    {
+      const length0 = record.clients.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        view.writeUint32(record.clients[i0]);
+      }
+    }
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IResultsSTG {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return ResultsSTG.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IResultsSTG {
+    let field0: Guid;
+    field0 = view.readGuid();
+    let field1: GamerChoice;
+    field1 = view.readUint32() as GamerChoice;
+    let field2: Array<GamerChoice>;
+    {
+      let length0 = view.readUint32();
+      field2 = new Array<GamerChoice>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: GamerChoice;
+        x0 = view.readUint32() as GamerChoice;
+        field2[i0] = x0;
+      }
+    }
+    let field3: Array<IStroke>;
+    {
+      let length0 = view.readUint32();
+      field3 = new Array<IStroke>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: IStroke;
+        x0 = Stroke.readFrom(view);
+        field3[i0] = x0;
+      }
+    }
+    let field4: Array<IStroke>;
+    {
+      let length0 = view.readUint32();
+      field4 = new Array<IStroke>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: IStroke;
+        x0 = Stroke.readFrom(view);
+        field4[i0] = x0;
+      }
+    }
+    let field5: Array<ClientType>;
+    {
+      let length0 = view.readUint32();
+      field5 = new Array<ClientType>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: ClientType;
+        x0 = view.readUint32() as ClientType;
+        field5[i0] = x0;
+      }
+    }
+    let message: IResultsSTG = {
+      id: field0,
+      outcome: field1,
+      votes: field2,
+      drawingA: field3,
+      drawingB: field4,
+      clients: field5,
+    };
+    return new ResultsSTG(message);
   }
 }
 

@@ -42,7 +42,6 @@ struct GameState {
   Stroke[] drawingB;
 }
 
-
 struct Stroke {
   CursorLocation[] locs;
 }
@@ -51,8 +50,17 @@ struct ClientJoined {
   ClientType newClient;
 }
 
-struct STG_New {
+struct NewSTG {
   guid id;
+}
+
+struct ResultsSTG { // keep in global state
+  guid id;
+  GamerChoice outcome;
+  GamerChoice[] votes;
+  Stroke[] drawingA; // show both 
+  Stroke[] drawingB;
+  ClientType[] clients;
 }
 
 struct Clear {
