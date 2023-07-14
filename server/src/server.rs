@@ -1,13 +1,11 @@
 mod handlers;
 
 use std::{
-    clone,
     collections::HashMap,
     sync::{Arc, Mutex},
 };
 
 use tokio::{
-    io::BufWriter,
     net::{TcpListener, TcpStream},
     sync::mpsc::{unbounded_channel, UnboundedSender},
 };
@@ -20,7 +18,7 @@ use tokio_tungstenite::{
 
 // Just so we dont have to type out crate::ml every time
 use crate::{
-    gen_schemas::{self, api, client, common},
+    gen_schemas::{api, client, common},
     ml,
 };
 
@@ -33,18 +31,34 @@ type Clients = HashMap<u32, UnboundedSender<Message>>;
 const MAX_PLAYERS: usize = 50;
 const MAX_BROADCAST_MESSAGES: usize = 100;
 
-#[derive(Debug, Default, Clone)]
-struct Gamer {
-    /// Starts the order at 1
-    pub order: u8,
-}
-
 #[derive(Debug, Clone)]
 enum ClientType {
-    Gamer(Gamer),
+    Gamer(u8),
     Audience,
     Admin,
     Unknown,
+}
+
+impl ClientType {
+    pub fn to_dto(self, id: u32) -> api::ClientTypeDTO {
+        let ctype: api::ClientType = match self {
+            ClientType::Audience => api::ClientType::Audience,
+            ClientType::Gamer(_) => api::ClientType::Gamer,
+            ClientType::Unknown => api::ClientType::Unknown,
+            ClientType::Admin => api::ClientType::Admin,
+        };
+
+        let mut ctype_dto = api::ClientTypeDTO {
+            ctype,
+            gamer_id: 0,
+            id,
+        };
+
+        if let ClientType::Gamer(gamer_order) = self {
+            ctype_dto.gamer_id = gamer_order;
+        }
+        ctype_dto
+    }
 }
 
 #[derive(Debug)]
@@ -56,7 +70,9 @@ struct GameResult {
 }
 
 #[derive(Debug)]
-struct GameState {}
+struct GameState {
+    clients: HashMap<u32, ClientType>,
+}
 
 #[derive(Debug)]
 struct ClientConnection {
@@ -67,6 +83,7 @@ struct ClientConnection {
 }
 
 impl ClientConnection {
+    /// Understand that if you encounter a send error for this opbject, it means u have an unresolved mutex before awaiting this
     pub async fn broadcast_message(&self, msg: &Message) {
         let clients = self.clients_ref.lock().unwrap();
         for (_, client) in clients.iter() {
@@ -81,6 +98,32 @@ impl ClientConnection {
     pub async fn remove_client(&mut self, client_id: u32) {
         let mut clients = self.clients_ref.lock().unwrap();
         clients.remove_entry(&client_id);
+    }
+
+    pub async fn add_client(&mut self, tx: UnboundedSender<Message>) {
+        let client_count = self.clients_ref.lock().unwrap().len();
+        self.client_id = (client_count as u32);
+        self.clients_ref.lock().unwrap().insert(self.client_id, tx);
+
+        if let Some(ref mut game) = self.game_ref.lock().unwrap().as_mut() {
+            let total_gamers = game
+                .clients
+                .iter()
+                .filter(|(id, client_type)| match client_type {
+                    ClientType::Gamer(_) => true,
+                    _ => false,
+                })
+                .count();
+
+            if (total_gamers <= 1) {
+                self.client_type = ClientType::Gamer(total_gamers as u8);
+            } else {
+                self.client_type = ClientType::Audience;
+            }
+
+            game.clients
+                .insert(self.client_id, self.client_type.clone());
+        }
     }
 }
 
@@ -135,54 +178,28 @@ async fn accept_connection(stream: TcpStream, conn: ClientConnection) {
 
 async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Result<()> {
     println!("New TCP connection from {}", stream.peer_addr()?);
-    // Very important consideration here is we cant keep a mutexed object naked and unused before await because the future can be across 2 threads
-    let client_count = conn.clients_ref.lock().unwrap().len();
-    // TODO: this partial ownership is rough, refactor for client to not own stream
-    let ws_stream = accept_async(stream).await?; //expect("Failed to accept");
-    conn.client_id = (client_count as u32);
-
-    if (client_count <= 1) {
-        conn.client_type = ClientType::Gamer(Gamer {
-            order: client_count as u8,
-        });
-    } else {
-        conn.client_type = ClientType::Audience;
-    }
+    let ws_stream = accept_async(stream).await?;
 
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
     let (tx, mut rx) = unbounded_channel::<Message>();
-
-    conn.clients_ref.lock().unwrap().insert(conn.client_id, tx);
 
     let ping = api::Ping {
         msg: &String::from("sup"),
         test: true,
     };
 
+    conn.add_client(tx).await;
+
     let buf = get_dto_binary(ping, api::ServerMessageType::Ping as u32);
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
 
-    // let ctype_dto: common::ClientType = match conn.client_type {
-    //     ClientType::Audience => common::ClientType::Audience,
-    //     ClientType::Gamer(_) => common::ClientType::Gamer,
-    //     ClientType::Unknown => common::ClientType::Unknown,
-    // };
+    let ctype = conn.client_type.clone();
+    let ctype_dto = ctype.to_dto(conn.client_id);
 
-    // let mut ctype = api::ClientTypeDTO {
-    //     ctype: ctype_dto,
-    //     gamer_id: 0,
-    //     id: conn.client_id,
-    // };
-
-    // if let ClientType::Gamer(ref gamer) = conn.client_type {
-    //     ctype.gamer_id = gamer.order;
-    // }
-
-    // let buf = get_dto_binary(ctype, shared::ServerMessageType::ClientType as u32);
-    // println!("Client type: {:?} and binary: {:?}", ctype_dto, &buf);
-    // let msg = Message::Binary(buf);
-    // ws_sender.send(msg).await?;
+    let buf = get_dto_binary(ctype_dto, api::ServerMessageType::ClientTypeDTO as u32);
+    let msg = Message::Binary(buf);
+    ws_sender.send(msg).await?;
 
     loop {
         // Choses either rx or websocket to recieve, is really just a fancy match for 2 futures
@@ -212,8 +229,6 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
                             else {
                                 println!("Bad msg type {:?}",op_code_number );
                             }
-
-
                         }
                         else if msg.is_close() {
                             println!("Got close message");
@@ -239,6 +254,9 @@ async fn handle_client_message(
     data: &[u8],
     conn: &mut ClientConnection,
 ) {
+    // Admin handlers
+
+    // Game handlers
     match msg_type {
         client::ClientMessageType::Ping => {
             let ping = api::Ping::deserialize(data).unwrap();
@@ -247,8 +265,13 @@ async fn handle_client_message(
         }
         client::ClientMessageType::StartADM => {
             if let ClientType::Admin = conn.client_type {
-                let mut game = conn.game_ref.lock().unwrap();
-                *game = Some(GameState {});
+                // unscope the mutex before await because the future can be across 2 threads
+                {
+                    let mut game = conn.game_ref.lock().unwrap();
+                    *game = Some(GameState {
+                        clients: HashMap::new(),
+                    });
+                }
                 let e = common::Empty {};
                 let msg = get_dto_binary(e, api::ServerMessageType::Start as u32);
                 let msg = Message::Binary(msg);
@@ -257,12 +280,6 @@ async fn handle_client_message(
             } else {
                 println!("Unauthorized start from {:?}", conn.client_id);
             }
-            // let img = ImageData::deserialize(data).unwrap();
-
-            // let new_buf = get_dto_binary(img, api::ServerMessageType::Image as u32);
-            // let msg = Message::Binary(new_buf);
-
-            // conn.broadcast_message(&msg).await;
         }
         client::ClientMessageType::AuthADM => {
             println!("Upgrading client number {:?} to admin", conn.client_id);
