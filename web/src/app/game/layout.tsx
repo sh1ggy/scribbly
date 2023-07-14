@@ -39,15 +39,15 @@ export default function DashboardLayout({
     const openConnection = () => {
       console.log('OPENED CONN');
     }
-    // window.SLUGMA_SOCK.addEventListener('open', openConnection);
-    // window.SLUGMA_SOCK.addEventListener('message', message);
-    // window.SLUGMA_SOCK.addEventListener('error', error);
+    window.SLUGMA_SOCK.addEventListener('open', openConnection);
+    window.SLUGMA_SOCK.addEventListener('message', message);
+    window.SLUGMA_SOCK.addEventListener('error', error);
 
-    // return () => {
-    //   window.SLUGMA_SOCK.removeEventListener('open', openConnection);
-    //   window.SLUGMA_SOCK.removeEventListener('message', message);
-    //   window.SLUGMA_SOCK.removeEventListener('error', error);
-    // }
+    return () => {
+      window.SLUGMA_SOCK.removeEventListener('open', openConnection);
+      window.SLUGMA_SOCK.removeEventListener('message', message);
+      window.SLUGMA_SOCK.removeEventListener('error', error);
+    }
   }, [])
 
   return (

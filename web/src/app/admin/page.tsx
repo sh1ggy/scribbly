@@ -18,10 +18,10 @@ export default function Admin() {
           handleAdmin(Ping.decode(data));
       }
     }
-    // window.SLUGMA_SOCK.addEventListener('message', message);
-    // return () => {
-    //   window.SLUGMA_SOCK.removeEventListener('message', message);
-    // }
+    window.SLUGMA_SOCK.addEventListener('message', message);
+    return () => {
+      window.SLUGMA_SOCK.removeEventListener('message', message);
+    }
   }, [])
 
   return (
