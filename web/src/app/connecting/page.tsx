@@ -37,7 +37,7 @@ export default async function Game() {
         case ServerMessageType.ClientTypeDTO:
           handleClientType(ClientTypeDTO.decode(data));
           return;
-        case ServerMessageType.Start:
+        case ServerMessageType.Restart:
           console.log("START");
           router.push("/");
           return;

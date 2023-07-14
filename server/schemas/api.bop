@@ -20,7 +20,7 @@ enum ServerMessageType {
   Clear = 8; 
 
   // STAGES
-  Start = 28;
+  Restart = 28;
   AudienceLobbySTG = 29; 
   DrawingSTG = 30; // timer on client -- timer on client is single source of truth (server authoritative)
   VotingSTG = 31; 
