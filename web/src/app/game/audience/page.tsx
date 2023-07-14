@@ -62,7 +62,9 @@ export default function Audience() {
           />
           {voting &&
             <button
-              onClick={() => console.log("VOTE GREEN")}
+              onClick={(e) => {
+                e.preventDefault();
+              }}
               className="btn border-none text-xs md:text-md">Vote</button>
           }
         </div>
