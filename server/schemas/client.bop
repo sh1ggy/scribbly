@@ -1,0 +1,23 @@
+import "common.bop"
+
+enum ClientMessageType {
+  // -- GAMER
+  Ping = 1;
+  CursorLocation = 2; 
+  FinishStroke = 3; // invoked on mouseup in onDraw(); -- empty struct
+  // maybe submit is necessary here
+  Clear = 4;
+  
+  // -- AUDIENCE
+  Vote = 15;
+
+  // -- ADMIN
+  ADM_StageChange = 26;
+  ADM_Start = 27; // empty struct
+  ADM_End = 28;
+}
+
+struct Vote {
+  GamerChoice choice;
+}
+

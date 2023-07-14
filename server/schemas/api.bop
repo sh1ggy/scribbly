@@ -1,0 +1,61 @@
+import "common.bop"
+
+enum Stage {
+  GamerSelect = 1;
+  AudienceLobby = 2; // at this point wait 20 secs
+  Drawing = 3;
+  Voting = 4;
+  Judging = 5;
+  Results = 6;
+}
+
+enum ServerMessageType {
+  Ping = 1;
+  GameState = 2; // -- see GameState struct 
+  ClientTypeDTO = 3; // sends client type
+  ClientJoined = 4; // also client type denotes diff event
+  DrawUpdate = 5; // for the audience
+  FinishStroke = 6; // -- storing coords
+  VoteUpdate = 7; // -- for counting votes
+  Clear = 8; 
+
+  // STAGES
+  STG_New = 28;
+  STG_AudienceLobby = 29; 
+  STG_Drawing = 30; // timer on client -- timer on client is single source of truth (server authoritative)
+  STG_Voting = 31; 
+  STG_Judging = 32; 
+  STG_Results = 33;
+}
+
+struct DrawUpdate {
+  CursorLocation cursor;
+  GamerChoice gamer;
+}
+
+struct GameState {
+  guid id;
+  Stage stage;
+  ClientType[] clients;
+  Stroke[] drawing;
+}
+
+struct Stroke {
+  CursorLocation[] locs;
+}
+
+struct ClientJoined {
+  ClientType newClient;
+}
+
+struct STG_New {
+  guid id;
+}
+
+struct Clear {
+  GamerChoice gamer;
+}
+
+struct STG_Results {
+  guid id;
+}
