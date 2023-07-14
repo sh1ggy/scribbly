@@ -3,8 +3,10 @@ import { useState, useEffect } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { Provider, useAtom } from "jotai";
-import { Stage } from "@/lib/schemas";
+import { GameState, IGameState, ServerMessageType, Stage } from "@/lib/schemas";
 import { gameStateAtom } from "@/lib/store";
+import { deserialize } from "@/utils/bopUtils";
+
 export default function DashboardLayout({
   children, // will be a page or nested layout
 }: {
@@ -14,17 +16,50 @@ export default function DashboardLayout({
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
 
-  const matches = true; // placeholder
+  function handleGameState(gameState: IGameState) {
+    console.log(gameState);
+    setGameState(gameState);
+  }
+
+  const message = async (event: MessageEvent<Blob>) => {
+    const { type, data } = await deserialize(event);
+    switch (type) {
+      case ServerMessageType.GameState:
+        console.log("GAME STATE" + data);
+        handleGameState(GameState.decode(data));
+    }
+  }
+
+  const error = (event: Event) => {
+    console.error('WebSocket error:', error);
+  }
+
+  const matches = useMediaQuery("(min-width: 343px)");
+  useEffect(() => {
+    const openConnection = () => {
+      console.log('OPENED CONN');
+    }
+    // window.SLUGMA_SOCK.addEventListener('open', openConnection);
+    // window.SLUGMA_SOCK.addEventListener('message', message);
+    // window.SLUGMA_SOCK.addEventListener('error', error);
+
+    // return () => {
+    //   window.SLUGMA_SOCK.removeEventListener('open', openConnection);
+    //   window.SLUGMA_SOCK.removeEventListener('message', message);
+    //   window.SLUGMA_SOCK.removeEventListener('error', error);
+    // }
+  }, [])
+
   return (
     <section className="flex flex-col item-center lg:justify-center">
       <div className="flex flex-col lg:justify-center">
         {matches &&
           <ul className="steps m-3 overflow-clip">
-            <li className={`step ${gameState.stage == Stage.GamerSelect &&'step-secondary'}`}>Start</li>
-            <li className={`step ${gameState.stage == Stage.Drawing &&'step-secondary'}`}>Drawing</li>
-            <li className={`step ${gameState.stage == Stage.Voting &&'step-secondary'}`}>Voting</li>
-            <li className={`step ${gameState.stage == Stage.Judging &&'step-secondary'}`}>Judging</li>
-            <li className={`step ${gameState.stage == Stage.Results &&'step-secondary'}`}>Results</li>
+            <li className={`step ${gameState.stage == Stage.GamerSelect && 'step-secondary'}`}>Start</li>
+            <li className={`step ${gameState.stage == Stage.Drawing && 'step-secondary'}`}>Drawing</li>
+            <li className={`step ${gameState.stage == Stage.Voting && 'step-secondary'}`}>Voting</li>
+            <li className={`step ${gameState.stage == Stage.Judging && 'step-secondary'}`}>Judging</li>
+            <li className={`step ${gameState.stage == Stage.Results && 'step-secondary'}`}>Results</li>
           </ul>
         }
         {!matches &&
