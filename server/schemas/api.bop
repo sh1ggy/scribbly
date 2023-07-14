@@ -37,8 +37,10 @@ struct GameState {
   guid id;
   Stage stage;
   ClientType[] clients;
-  Stroke[] drawing;
+  Stroke[] drawingA;
+  Stroke[] drawingB;
 }
+
 
 struct Stroke {
   CursorLocation[] locs;
@@ -62,6 +64,7 @@ struct STG_Results {
 
 struct Ping {
   string msg;
+  bool test;
 }
 
 struct ClientTypeDTO {
