@@ -856,6 +856,204 @@ export class STgResults implements ISTgResults {
   }
 }
 
+export interface IPing extends BebopRecord {
+  msg: string;
+}
+
+export class Ping implements IPing {
+  public msg: string;
+
+  constructor(record: IPing) {
+    this.msg = record.msg;
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return Ping.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IPing): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    Ping.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link Ping}.
+   */
+  public static validateCompatibility(record: IPing): void {
+    BebopTypeGuard.ensureString(record.msg)
+  }
+
+  /**
+   * Unsafely creates an instance of {@link Ping} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IPing {
+      return new Ping(record);
+  }
+
+  /**
+   * Creates a new {@link Ping} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IPing {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`Ping.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    Ping.validateCompatibility(parsed);
+    return Ping.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return Ping.encode(this);
+  }
+
+  public static encode(record: IPing): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    Ping.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IPing, view: BebopView): number {
+    const before = view.length;
+    view.writeString(record.msg);
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IPing {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return Ping.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IPing {
+    let field0: string;
+    field0 = view.readString();
+    let message: IPing = {
+      msg: field0,
+    };
+    return new Ping(message);
+  }
+}
+
+export interface IClientTypeDTO extends BebopRecord {
+  gamerId: number;
+  id: number;
+  ctype: ClientType;
+}
+
+export class ClientTypeDTO implements IClientTypeDTO {
+  public gamerId: number;
+  public id: number;
+  public ctype: ClientType;
+
+  constructor(record: IClientTypeDTO) {
+    this.gamerId = record.gamerId;
+    this.id = record.id;
+    this.ctype = record.ctype;
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return ClientTypeDTO.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IClientTypeDTO): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    ClientTypeDTO.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link ClientTypeDTO}.
+   */
+  public static validateCompatibility(record: IClientTypeDTO): void {
+    BebopTypeGuard.ensureUint8(record.gamerId)
+    BebopTypeGuard.ensureUint32(record.id)
+    BebopTypeGuard.ensureEnum(record.ctype, ClientType);
+  }
+
+  /**
+   * Unsafely creates an instance of {@link ClientTypeDTO} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IClientTypeDTO {
+      return new ClientTypeDTO(record);
+  }
+
+  /**
+   * Creates a new {@link ClientTypeDTO} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IClientTypeDTO {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`ClientTypeDTO.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    ClientTypeDTO.validateCompatibility(parsed);
+    return ClientTypeDTO.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return ClientTypeDTO.encode(this);
+  }
+
+  public static encode(record: IClientTypeDTO): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    ClientTypeDTO.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IClientTypeDTO, view: BebopView): number {
+    const before = view.length;
+    view.writeByte(record.gamerId);
+    view.writeUint32(record.id);
+    view.writeUint32(record.ctype);
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IClientTypeDTO {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return ClientTypeDTO.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IClientTypeDTO {
+    let field0: number;
+    field0 = view.readByte();
+    let field1: number;
+    field1 = view.readUint32();
+    let field2: ClientType;
+    field2 = view.readUint32() as ClientType;
+    let message: IClientTypeDTO = {
+      gamerId: field0,
+      id: field1,
+      ctype: field2,
+    };
+    return new ClientTypeDTO(message);
+  }
+}
+
 export const AUDIENCE_LOBBY_TIME: number = 30000;
 
 export const DRAWING_TIME: number = 60000;
