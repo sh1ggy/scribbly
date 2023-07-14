@@ -97,6 +97,10 @@ impl ClientConnection {
     pub async fn remove_client(&mut self, client_id: u32) {
         let mut clients = self.clients_ref.lock().unwrap();
         clients.remove_entry(&client_id);
+
+        if let Some(ref mut game) = self.game_ref.lock().unwrap().as_mut() {
+            game.clients.remove_entry(&client_id);
+        }
     }
 
     pub async fn add_client(&mut self, tx: UnboundedSender<Message>) {
