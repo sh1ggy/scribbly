@@ -61,3 +61,13 @@ struct Clear {
 struct STG_Results {
   guid id;
 }
+
+struct Ping {
+  string msg;
+}
+
+struct ClientTypeDTO {
+  uint8 gamerId; 
+  uint32 id;
+  ClientType ctype;
+}
