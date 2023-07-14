@@ -22,3 +22,5 @@ enum ClientType {
   Admin = 3;
   Unknown = 4;
 }
+struct Empty {
+}

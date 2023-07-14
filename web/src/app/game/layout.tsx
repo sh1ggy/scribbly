@@ -32,6 +32,8 @@ export default function DashboardLayout({
       case ServerMessageType.GameState:
         console.log("GAME STATE" + data);
         handleGameState(GameState.decode(data));
+      case ServerMessageType.Start:
+        router.push("/");
     }
   }
 

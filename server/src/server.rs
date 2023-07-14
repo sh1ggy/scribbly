@@ -20,7 +20,7 @@ use tokio_tungstenite::{
 
 // Just so we dont have to type out crate::ml every time
 use crate::{
-    gen_schemas::{ self, common, api, client},
+    gen_schemas::{self, api, client, common},
     ml,
 };
 
@@ -32,7 +32,6 @@ type Clients = HashMap<u32, UnboundedSender<Message>>;
 
 const MAX_PLAYERS: usize = 50;
 const MAX_BROADCAST_MESSAGES: usize = 100;
-
 
 #[derive(Debug, Default, Clone)]
 struct Gamer {
@@ -56,11 +55,8 @@ struct GameResult {
     pub ppl: Vec<ClientType>,
 }
 
-
-
 #[derive(Debug)]
 struct GameState {}
-
 
 #[derive(Debug)]
 struct ClientConnection {
@@ -74,8 +70,11 @@ impl ClientConnection {
     pub async fn broadcast_message(&self, msg: &Message) {
         let clients = self.clients_ref.lock().unwrap();
         for (_, client) in clients.iter() {
+            let client = client.clone();
             let msg = msg.clone();
-            client.send(msg).unwrap();
+            tokio::spawn(async move {
+                client.send(msg).unwrap();
+            });
         }
     }
 
@@ -134,7 +133,6 @@ async fn accept_connection(stream: TcpStream, conn: ClientConnection) {
     }
 }
 
-
 async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Result<()> {
     println!("New TCP connection from {}", stream.peer_addr()?);
     // Very important consideration here is we cant keep a mutexed object naked and unused before await because the future can be across 2 threads
@@ -158,14 +156,12 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
 
     let ping = api::Ping {
         msg: &String::from("sup"),
-        test: true
+        test: true,
     };
 
     let buf = get_dto_binary(ping, api::ServerMessageType::Ping as u32);
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
-
-
 
     // let ctype_dto: common::ClientType = match conn.client_type {
     //     ClientType::Audience => common::ClientType::Audience,
@@ -209,14 +205,14 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
                             let op_code_buf = &data[0..4];
                             let op_code_number = u32::from_le_bytes(op_code_buf.try_into().unwrap());
                             if let Ok(op_code) = client::ClientMessageType::try_from(op_code_number) {
-                                
+
                                 let data_buf = &mut data[4..];
                                 handle_client_message(op_code, data_buf, &mut conn).await;
                             }
                             else {
                                 println!("Bad msg type {:?}",op_code_number );
                             }
-                            
+
 
                         }
                         else if msg.is_close() {
@@ -238,30 +234,41 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     Ok(())
 }
 
-async fn handle_client_message(msg_type : client::ClientMessageType, data: &[u8], conn: &mut ClientConnection) {
+async fn handle_client_message(
+    msg_type: client::ClientMessageType,
+    data: &[u8],
+    conn: &mut ClientConnection,
+) {
     match msg_type {
         client::ClientMessageType::Ping => {
             let ping = api::Ping::deserialize(data).unwrap();
 
             println!("Got ping {:?}", ping);
         }
-        client::ClientMessageType::StartADM=> {
+        client::ClientMessageType::StartADM => {
+            if let ClientType::Admin = conn.client_type {
+                let mut game = conn.game_ref.lock().unwrap();
+                *game = Some(GameState {});
+                let e = common::Empty {};
+                let msg = get_dto_binary(e, api::ServerMessageType::Start as u32);
+                let msg = Message::Binary(msg);
+                conn.broadcast_message(&msg).await;
+                println!("Starting game");
+            } else {
+                println!("Unauthorized start from {:?}", conn.client_id);
+            }
             // let img = ImageData::deserialize(data).unwrap();
-            let mut game = conn.game_ref.lock().unwrap();
-            *game = Some(GameState {});
-            println!("Starting game");
+
             // let new_buf = get_dto_binary(img, api::ServerMessageType::Image as u32);
             // let msg = Message::Binary(new_buf);
 
             // conn.broadcast_message(&msg).await;
-        },
+        }
         client::ClientMessageType::AuthADM => {
             println!("Upgrading client number {:?} to admin", conn.client_id);
             conn.client_type = ClientType::Admin;
         }
 
-        _=> println!("Unhandled message {:?}", msg_type),
+        _ => println!("Unhandled message {:?}", msg_type),
     }
 }
-
-

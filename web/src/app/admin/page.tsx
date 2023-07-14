@@ -16,6 +16,11 @@ export default function Admin() {
     let sendAdminAuth = new Uint8Array();
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendAdminAuth, ClientMessageType.AuthADM));
   }
+  function handleStartGame() {
+    console.log("client starting game from admin");
+    let sendStart = new Uint8Array();
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendStart, ClientMessageType.StartADM))
+  }
   useEffect(() => {
     window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
     const message = async (event: MessageEvent<Blob>) => {
@@ -40,6 +45,7 @@ export default function Admin() {
         <button
           onClick={(e) => {
             e.preventDefault();
+            handleStartGame();
           }}
           className="btn">Start/Restart Game</button>
         <button className="btn">Switch Stage</button>
