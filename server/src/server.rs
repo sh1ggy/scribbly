@@ -61,13 +61,6 @@ impl ClientType {
     }
 }
 
-#[derive(Debug)]
-struct GameResult {
-    pub game_outcome: common::GamerChoice,
-    pub audience_votes: Vec<common::GamerChoice>,
-    pub image_locs: [Vec<u8>; 2],
-    pub ppl: Vec<ClientType>,
-}
 
 #[derive(Debug)]
 struct GameState {
@@ -189,6 +182,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     };
 
     conn.add_client(tx).await;
+    println!("Client added to server {:?}", conn.game_ref.lock().unwrap());
 
     let buf = get_dto_binary(ping, api::ServerMessageType::Ping as u32);
     let msg = Message::Binary(buf);

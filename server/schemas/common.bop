@@ -20,7 +20,7 @@ enum ClientType {
   Gamer = 1;
   Audience = 2;
   Admin = 3;
-  Unknown = 4;
+  Unknown = 4; //Client will have to attempt reconnecting or give error page saying game not started, wait for admin
 }
 struct Empty {
 }
