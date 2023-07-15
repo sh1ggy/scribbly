@@ -2,7 +2,7 @@
 import { useDraw } from "@/hooks/useDraw";
 import { Draw, Point, drawLine } from '@/utils/drawLine'
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ClientMessageType, ClientTypeDTO, CursorLocation, IClientTypeDTO, ServerMessageType } from "@/lib/schemas";
+import { ClientMessageType, ClientTypeDTO, CursorLocation, IClientTypeDTO, IPing, Ping, ServerMessageType } from "@/lib/schemas";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 
 type DrawLineProps = {
@@ -52,19 +52,26 @@ export default function Gamer() {
     }
   }, []);
 
-  function handleClientType(dto: IClientTypeDTO) {
-    
+  function handlePing(ping: IPing) {
+
   }
 
   useEffect(() => {
     window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
-    // const message = async (event: MessageEvent<Blob>) => {
-    //   const { type, data } = await deserialize(event);
-    //   switch (type) {
-    //     case ServerMessageType.:
-    //       handleClientType(ClientTypeDTO.decode(data));
-    //   }
-    }, [])
+    const message = async (event: MessageEvent<Blob>) => {
+      const { type, data } = await deserialize(event);
+      switch (type) {
+        case ServerMessageType.Ping:
+          handlePing(Ping.decode(data));
+          return;
+      }
+    }
+    window.SCRIBBLE_SOCK.addEventListener('message', message);
+
+    return () => {
+      window.SCRIBBLE_SOCK.removeEventListener('message', message);
+    }
+  }, [])
 
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link

@@ -20,7 +20,7 @@ export default function DashboardLayout({
     console.log({ping});
   }
   function handleGameState(gameState: IGameState) {
-    console.log({gameState});
+    console.log("FROM LAYOUT NEW GAME STATE" + {gameState});
     setGameState(gameState);
   }
 
@@ -29,6 +29,9 @@ export default function DashboardLayout({
     switch (type) {
       case ServerMessageType.Ping: 
         handlePing(Ping.decode(data));
+        return;
+      case ServerMessageType.GameState:
+        handleGameState(GameState.decode(data));
         return;
 
     }

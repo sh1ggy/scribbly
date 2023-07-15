@@ -4,8 +4,10 @@ import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState } from "@/lib/schemas";
+import { gameStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
+import { useAtom } from "jotai";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +23,7 @@ export default function Audience() {
   const { containerRef, size: containerSize } = useContainerSize();
   const canvasRefA = useRef<HTMLCanvasElement>(null)
   const canvasRefB = useRef<HTMLCanvasElement>(null)
+  const [gameState, setGameState] = useAtom(gameStateAtom);
 
   function handleAudienceDrawing(drawData: IDrawUpdate) {
     if (drawData.gamer == GamerChoice.GamerA) {
@@ -47,13 +50,17 @@ export default function Audience() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
   }
 
-  function handleGameState(gameState: IGameState) {
+  function handleGameState() {
     gameState.drawings.forEach((d, i) => {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      // DO DRAW HERE 
+      d.strokes.forEach((s) => {
+        s.forEach((c, i) => {
+          drawLine({ prevPoint: s[i - 1], currentPoint: c, ctx, color })
+        })
+      })
     })
   }
 
@@ -69,9 +76,6 @@ export default function Audience() {
           console.log("COMMENCE VOTING" + data);
           setVoting(true);
           return;
-        case ServerMessageType.GameState:
-          handleGameState(GameState.decode(data));
-          return;
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);
@@ -79,6 +83,10 @@ export default function Audience() {
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
+
+  useEffect(() => {
+    handleGameState();
+  }, [gameState])
 
   useEffect(() => {
     if (containerSize.height < containerSize.width)
