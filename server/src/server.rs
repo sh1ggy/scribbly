@@ -145,9 +145,6 @@ impl ClientConnection {
         for (_, client) in clients.iter() {
             let msg = msg.clone();
             client.send(msg).unwrap();
-            // tokio::spawn(async move {
-            //     client.send(msg).unwrap();
-            // });
         }
     }
 
@@ -213,6 +210,13 @@ impl<'a, T: ml::MLModel> Server<'a, T> {
 
         let clients_con = HashMap::new();
         let cons_ref = Arc::new(Mutex::new(clients_con));
+
+
+        // tokio::spawn(async move || {
+        //     println!("ML thread started");
+
+        // });
+
 
         while let Ok((stream, _)) = listener.accept().await {
             let cc = ClientConnection {
