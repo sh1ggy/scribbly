@@ -5,3 +5,5 @@ data/**
 # python ipynb
 __pycache__
 .vercel
+
+results.csv

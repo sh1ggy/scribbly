@@ -249,7 +249,11 @@ pub async fn broadcast_message(clients_ref: Arc<Mutex<Clients>>, msg: &Message) 
     let clients = clients_ref.lock().unwrap();
     for (_, client) in clients.iter() {
         let msg = msg.clone();
-        client.send(msg).unwrap();
+        // client.send(msg).unwrap();
+        if let Err(e) = client.send(msg) {
+            println!("Error sending from client: {:?}", e);
+
+        } 
     }
 }
 
@@ -346,6 +350,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
 
+
     loop {
         // Choses either rx or websocket to recieve, is really just a fancy match for 2 futures
         tokio::select! {
@@ -388,7 +393,9 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
                     ws_sender.send(rx_msg).await?;
                 }
                 else {
-                    println!("No message from rx channel");
+                    ws_sender.close().await?;
+                    println!("No message from rx channel, closing connection");
+                    break;
                 }
             },
         }
