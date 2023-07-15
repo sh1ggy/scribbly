@@ -7,6 +7,7 @@ import { ClientMessageType, ClientTypeDTO, CursorLocation, GameState, ServerMess
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
 import { gameStateAtom } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 type DrawLineProps = {
   prevPoint: Point | null
@@ -23,6 +24,8 @@ export default function Gamer() {
 
   const [gameState, setGameState] = useAtom(gameStateAtom);
 
+  const router = useRouter();
+
   function cursorUp() {
     console.log("STROKE COMPLETE")
     const sendStroke = new Uint8Array();
@@ -32,6 +35,7 @@ export default function Gamer() {
   function createLine({ prevPoint, currentPoint, ctx }: Draw) {
     // socket.emit('draw-line', { prevPoint, currentPoint, color })
     console.log("DRAW LINE");
+    console.log({gameState});
     drawLine({ prevPoint, currentPoint, ctx, color });
     const cursorLocation = CursorLocation.encode({
       currentPoint: {
@@ -58,6 +62,10 @@ export default function Gamer() {
     }
   }, []);
 
+  useEffect(() => {
+    console.log(gameState);
+  }, [gameState])
+
   // Countdown timer
   // TODO: invoke event to submit drawing on timeout
   const TIMER_DELAY = 1000;
@@ -81,8 +89,8 @@ export default function Gamer() {
     >
       {/* <div ref={canvasContainerRef} className='flex flex-col w-screen max-h-full h-full bg-slate-700 justify-center items-center'> */}
       <div>
-        <p className="text-4xl p-2 bg-black w-full rounded-t-md text-center">{gameState.prompt}</p>
-        <p className="text-4xl p-2 bg-black w-full rounded-t-md text-center">{drawTimer}</p>
+        <p className="text-xl p-2 bg-secondary text-black w-full rounded-t-md text-center">{!gameState ? "Loading prompt" : gameState.prompt}</p>
+        <p className="text-4xl p-2 bg-black w-full text-center">{drawTimer}</p>
         {/* The line becomes offset and incorrect when the page is able to scroll */}
         <canvas
           ref={canvasRef}

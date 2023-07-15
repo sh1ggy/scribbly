@@ -46,8 +46,8 @@ export default function Audience() {
   }
 
   async function handleGameState() {
-    console.log("GDRAW", gameState.drawings);
-    await gameState.drawings.forEach((d, i) => {
+    if (!gameState) return;
+    gameState.drawings.forEach((d, i) => {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -55,7 +55,9 @@ export default function Audience() {
       d.strokes.forEach((stroke) => {
         stroke.forEach((coord, i) => {
           if (i == 0) return;
-          drawLine({ prevPoint: stroke[i - 1], currentPoint: coord, ctx, color })
+          const prevPoint: ICoord = {x: stroke[i - 1].x * canvasSize, y: stroke[i - 1].y * canvasSize}
+          const currentPoint: ICoord = {x: coord.x * canvasSize, y: coord.y * canvasSize}
+          drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
         })
       })
     })

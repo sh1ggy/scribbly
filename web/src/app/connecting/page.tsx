@@ -1,5 +1,5 @@
 'use client'
-import { IClientTypeDTO, ClientType, ServerMessageType, ClientTypeDTO, IPing, Ping, GameState } from '@/lib/schemas';
+import { IClientTypeDTO, ClientType, ServerMessageType, ClientTypeDTO, IPing, Ping, GameState, IGameState } from '@/lib/schemas';
 import { gameStateAtom, userStateAtom } from '@/lib/store';
 import { useAtom } from 'jotai';
 import Link from 'next/link'
@@ -27,6 +27,11 @@ export default async function Game() {
     return;
   }
 
+  async function handleGameState(gameState: IGameState) {
+    console.log({ gameState });
+    await setGameState(gameState);
+  }
+
   useEffect(() => {
     window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
     let timer: string | number | NodeJS.Timeout | undefined;
@@ -37,17 +42,15 @@ export default async function Game() {
         case ServerMessageType.Ping:
           handlePing(Ping.decode(data));
           return;
-        case ServerMessageType.ClientTypeDTO:
-          handleClientType(ClientTypeDTO.decode(data));
-          return;
         case ServerMessageType.Restart:
           console.log("START");
           router.push("/");
           return;
         case ServerMessageType.GameState:
-          let gs = GameState.decode(data);
-          console.log({ gs });
-          setGameState(gs);
+          handleGameState(GameState.decode(data));
+          return;
+        case ServerMessageType.ClientTypeDTO:
+          handleClientType(ClientTypeDTO.decode(data));
           return;
         case ServerMessageType.NoGameState:
           setNoGameState(true);
@@ -75,10 +78,6 @@ export default async function Game() {
         :
         <>
           <p className='text-4xl'>LOADING</p>
-          <div className='flex flex-col'>
-            <Link href="/game/audience">audience</Link>
-            <Link href="/game/gamer">gamer</Link>
-          </div>
         </>
       }
     </main>

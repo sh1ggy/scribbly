@@ -35,9 +35,9 @@ export default function Admin() {
     let sendStageChange = new Uint8Array();
     window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.GameModeADM))
   }
-  function handleGameState(state: IGameState) {
+  async function handleGameState(state: IGameState) {
     console.log({ state });
-    setGameState(state);
+    await setGameState(state);
   }
   useEffect(() => {
     window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
@@ -69,7 +69,7 @@ export default function Admin() {
     <main className="flex flex-col gap-4 h-[calc(100vh-56px)] p-24 bg-slate-700">
       <h1 className="text-4xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
       <div className="flex flex-col space-y-4">
-        {!noGameState &&
+        {gameState &&
           <>
             <p>{gameState.id.toString()}</p>
             <p>{gameState.stage}</p>

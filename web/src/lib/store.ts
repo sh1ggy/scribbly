@@ -1,17 +1,7 @@
 'use client'
 
 import { atom } from 'jotai'
-import { ClientType, IClientTypeDTO, IGameState, Stage } from './schemas';
-import { Guid } from 'bebop';
-
-
-const initGameState: IGameState = {
-  id: Guid.newGuid(),
-  stage: Stage.GamerSelect,
-  clients: [],
-  drawingA: [],
-  drawingB: []
-}
+import { ClientType, Drawing, IClientTypeDTO, IGameState, Stage } from './schemas';
 
 const initUser: IClientTypeDTO = {
     id: 0,
@@ -21,5 +11,5 @@ const initUser: IClientTypeDTO = {
 
 export const userStateAtom = atom(initUser);
 // Cant set through javascript, must be done in jsx so dont bother not using global window
-export const gameStateAtom = atom(initGameState);
+export const gameStateAtom = atom<null | IGameState>(null);
 

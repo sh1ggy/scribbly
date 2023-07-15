@@ -16,6 +16,7 @@ export default async function Results() {
   const canvasRefB = useRef<HTMLCanvasElement>(null); // need to draw this in with game state
 
   function handleGameState() {
+    if (!gameState) return;
     gameState.drawings.forEach((d, i) => {
       let canvas = i == 0 ? canvasRef.current : canvasRefB.current
       if (!canvas) return;
@@ -31,7 +32,7 @@ export default async function Results() {
   useEffect(() => {
     handleGameState()
   }, [gameState])
-  
+
   return (
     <div className="flex flex-col h-[calc(100vh-40px)] justify-center items-center bg-slate-700">
       <div className="flex flex-col items-center justify-center">
@@ -50,7 +51,7 @@ export default async function Results() {
         <div className="stats lg:stats-horizontal shadow bg-slate-800">
           <div className="stat">
             <div className="stat-title">Audience</div>
-            <div className="stat-value">{gameState.clients.size}</div>
+            <div className="stat-value">{gameState && gameState.clients.size}</div>
             <div className="stat-desc"># of people that voted</div>
           </div>
           <div className="stat">
