@@ -23,7 +23,7 @@ export async function deserialize(event: MessageEvent<Blob>) {
 
     data = data.slice(4);
 
-    console.log("Deserializing", { type, data });
+    // console.log("Deserializing", { type, data });
 
     return { type, data };
 }
