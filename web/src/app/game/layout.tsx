@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { GameState, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
-import { gameStateAtom, resultsAtom } from "@/lib/store";
+import { ClientType, ClientTypeDTO, GameState, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
+import { gameStateAtom, resultsAtom, userStateAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 
 export default function DashboardLayout({
@@ -15,6 +15,7 @@ export default function DashboardLayout({
   const [audience, setAudience] = useState(0);
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [userState, setUserState] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
 
   function handlePing(ping: IPing) {
@@ -69,6 +70,8 @@ export default function DashboardLayout({
       <div className="flex flex-col lg:justify-center">
         {matches ?
           <>
+            <code className="bg-secondary text-black text-center p-1">You are {userState.ctype == ClientType.Gamer ? "drawing" : "spectating"}</code>
+
             {gameState &&
               <ul className="steps m-3 overflow-clip">
                 <li className={`step ${gameState.stage == Stage.GamerSelect && 'step-secondary'}`}>Start</li>
@@ -83,7 +86,7 @@ export default function DashboardLayout({
           <ul className="steps m-3 overflow-clip">
             <div className="flex justify-center items-center space-x-4">
               <p className="p-2 bg-secondary text-black rounded-lg">Phase</p>
-              <code className="p-1 rounded-md bg-primary">Start</code>
+              <code className="p-1 rounded-md bg-primary">{gameState?.stage}</code>
             </div>
           </ul>
         }

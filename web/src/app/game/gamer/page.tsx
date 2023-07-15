@@ -85,7 +85,7 @@ export default function Gamer() {
         flex 
         flex-col 
         w-screen
-        max-h-[calc(100vh-157px)]
+        max-h-[calc(100vh-188.5px)]
         h-[calc(100vh-157px)]
         bg-slate-700
         justify-center
@@ -94,7 +94,7 @@ export default function Gamer() {
     >
       {/* <div ref={canvasContainerRef} className='flex flex-col w-screen max-h-full h-full bg-slate-700 justify-center items-center'> */}
       <div>
-        {gameState?.stage == Stage.Drawing ?
+        {gameState?.stage == Stage.Drawing &&
           <>
             <p className="text-sm p-2 bg-secondary text-black w-full rounded-t-md text-center">{!gameState ? "Loading prompt" : `You are drawing: ${gameState.prompt}`}</p>
             <p className="text-4xl p-2 bg-black w-full text-center">{drawTimer}</p>
@@ -109,13 +109,18 @@ export default function Gamer() {
               Clear canvas
             </button>
           </>
-          :
+        }
+        {gameState && gameState?.stage < Stage.Drawing &&
           <>
-            <p className="text-4xl p-2 w-full text-center">You've been chosen to draw</p>
             <p className="text-4xl p-2 w-full text-center">Loading</p>
           </>
         }
+        {gameState && gameState?.stage > Stage.Drawing &&
+          <>
+            <p className="text-4xl p-2 w-full text-center">Awaiting judgement</p>
+          </>
+        }
       </div>
-    </div>
+    </div >
   )
 }
