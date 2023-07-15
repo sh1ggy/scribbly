@@ -150,11 +150,12 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
                 x: coord.x,
                 y: coord.y,
             };
+            let gamer_choice = api::GamerChoice::try_from((order as u32) + 1).unwrap();
 
             ret_val = Some(DrawUpdate {
                 prev_point,
                 current_point,
-                gamer: api::GamerChoice::try_from(order as u32).unwrap(),
+                gamer: gamer_choice
             })
         } else {
             return None;
