@@ -205,7 +205,7 @@ async fn save_results_to_csv(
         .write(true)
         .create(true)
         .append(true)
-        .open("test.csv")
+        .open("results.csv")
         .await
         .unwrap();
     // Create a `BufWriter` for efficient writing

@@ -140,10 +140,6 @@ export enum ServerMessageType {
   VoteUpdate = 7,
   NoGameState = 8,
   Restart = 28,
-  AudienceLobbySTG = 29,
-  DrawingSTG = 30,
-  VotingSTG = 31,
-  JudgingSTG = 32,
   ResultsSTG = 33,
 }
 
@@ -259,6 +255,7 @@ export class DrawUpdate implements IDrawUpdate {
 export interface IGameState extends BebopRecord {
   id: Guid;
   stage: Stage;
+  millisElapsedSinceStage: bigint;
   clients: Map<number, ClientType>;
   drawings: Array<IDrawing>;
   prompt: string;
@@ -267,6 +264,7 @@ export interface IGameState extends BebopRecord {
 export class GameState implements IGameState {
   public id: Guid;
   public stage: Stage;
+  public millisElapsedSinceStage: bigint;
   public clients: Map<number, ClientType>;
   public drawings: Array<IDrawing>;
   public prompt: string;
@@ -274,6 +272,7 @@ export class GameState implements IGameState {
   constructor(record: IGameState) {
     this.id = record.id;
     this.stage = record.stage;
+    this.millisElapsedSinceStage = record.millisElapsedSinceStage;
     this.clients = record.clients;
     this.drawings = record.drawings;
     this.prompt = record.prompt;
@@ -306,6 +305,7 @@ export class GameState implements IGameState {
   public static validateCompatibility(record: IGameState): void {
     BebopTypeGuard.ensureGuid(record.id)
     BebopTypeGuard.ensureEnum(record.stage, Stage);
+    BebopTypeGuard.ensureUint64(record.millisElapsedSinceStage)
     BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
     BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
     BebopTypeGuard.ensureString(record.prompt)
@@ -344,6 +344,7 @@ export class GameState implements IGameState {
     const before = view.length;
     view.writeGuid(record.id);
     view.writeUint32(record.stage);
+    view.writeUint64(record.millisElapsedSinceStage);
     view.writeUint32(record.clients.size);
     for (const [k0, v0] of record.clients) {
       view.writeUint32(k0);
@@ -372,36 +373,39 @@ export class GameState implements IGameState {
     field0 = view.readGuid();
     let field1: Stage;
     field1 = view.readUint32() as Stage;
-    let field2: Map<number, ClientType>;
+    let field2: bigint;
+    field2 = view.readUint64();
+    let field3: Map<number, ClientType>;
     {
       let length0 = view.readUint32();
-      field2 = new Map<number, ClientType>();
+      field3 = new Map<number, ClientType>();
       for (let i0 = 0; i0 < length0; i0++) {
         let k0: number;
         let v0: ClientType;
         k0 = view.readUint32();
         v0 = view.readUint32() as ClientType;
-        field2.set(k0, v0);
+        field3.set(k0, v0);
       }
     }
-    let field3: Array<IDrawing>;
+    let field4: Array<IDrawing>;
     {
       let length0 = view.readUint32();
-      field3 = new Array<IDrawing>(length0);
+      field4 = new Array<IDrawing>(length0);
       for (let i0 = 0; i0 < length0; i0++) {
         let x0: IDrawing;
         x0 = Drawing.readFrom(view);
-        field3[i0] = x0;
+        field4[i0] = x0;
       }
     }
-    let field4: string;
-    field4 = view.readString();
+    let field5: string;
+    field5 = view.readString();
     let message: IGameState = {
       id: field0,
       stage: field1,
-      clients: field2,
-      drawings: field3,
-      prompt: field4,
+      millisElapsedSinceStage: field2,
+      clients: field3,
+      drawings: field4,
+      prompt: field5,
     };
     return new GameState(message);
   }
@@ -1272,6 +1276,10 @@ export class ClientTypeDTO implements IClientTypeDTO {
 export const AUDIENCE_LOBBY_TIME: number = 30000;
 
 export const DRAWING_TIME: number = 60000;
+
+export const RESULTS_DRUMROLL: number = 5000;
+
+export const VOTING_TIME: number = 15000;
 
 export interface ICoord extends BebopRecord {
   x: number;

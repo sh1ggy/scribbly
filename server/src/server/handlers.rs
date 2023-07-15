@@ -59,6 +59,20 @@ async fn handle_admin_message(
     match msg_type {
         client::ClientMessageType::StartADM => {
             if let ClientType::Admin = conn.client_type {
+                let mut categories = tokio::fs::read_to_string("categories.txt")
+                    .await
+                    .expect("Something went wrong reading the file");
+
+                //Split on newline
+                let categories: Vec<&str> = categories.split('\n').collect();
+                //Pick a random line
+                let cat = rand::random::<usize>() % categories.len();
+                let prompt = categories[cat];
+                let prompt = crate::server::Prompt {
+                    name: prompt.to_string(),
+                    class: cat as u32,
+                };
+
                 // unscope the mutex before await because the future can be across 2 threads
                 {
                     let mut game = conn.game_ref.lock().unwrap();
@@ -67,25 +81,12 @@ async fn handle_admin_message(
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
                         .as_millis();
-                    //Read from a file called categories.txt and pick a random line
-                    let mut categories = std::fs::read_to_string("categories.txt")
-                        .expect("Something went wrong reading the file");
-                    //Split on newline
-                    let categories: Vec<&str> = categories.split('\n').collect();
-                    //Pick a random line
-                    let cat = rand::random::<usize>() % categories.len();
-                    let prompt = categories[cat];
-                    let prompt = crate::server::Prompt {
-                        name: prompt.to_string(),
-                        class: cat as u32,
-                    };
 
                     let random_bytes = rand::thread_rng().gen::<[u8; 16]>();
                     *game = Some(GameState {
                         votes: Vec::new(),
                         last_stage_time: current_time,
                         prompt,
-                        // TODO: make guid better lole
                         id: Guid::from_ms_bytes(&random_bytes),
                         stage: api::Stage::GamerSelect,
                         clients: HashMap::new(),
