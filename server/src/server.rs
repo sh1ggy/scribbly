@@ -92,7 +92,6 @@ async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
     if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
         let mut drawings: Vec<Drawing> = Vec::new();
         let game_drawings = game.drawings.clone();
-        println!("Game drawings: {:?}", game_drawings);
         for drawing in game_drawings.iter() {
             let mut drawingDto = Drawing {
                 strokes: Vec::new(),

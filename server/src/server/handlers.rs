@@ -40,7 +40,6 @@ pub async fn handle_client_message(
 ) {
     // Admin handlers
     if let ClientType::Admin = conn.client_type {
-        println!("Admin message: {:?}", msg_type);
         handle_admin_message(msg_type, data, conn).await;
     }
     handle_game_message(msg_type, data, conn).await;
