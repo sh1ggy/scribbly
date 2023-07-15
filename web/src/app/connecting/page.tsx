@@ -33,7 +33,8 @@ export default async function Game() {
   }
 
   useEffect(() => {
-    window.SCRIBBLE_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
+    // window.SCRIBBLE_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
+    window.SCRIBBLE_SOCK = new WebSocket(process.env.NEXT_PUBLIC_WS as string);
     console.log(`ws://${process.env.NEXT_PUBLIC_IP}:8001`)
     let timer: string | number | NodeJS.Timeout | undefined;
 
