@@ -29,7 +29,6 @@ enum ServerMessageType {
 }
 
 struct DrawUpdate {
-  Coord prevPoint;
   Coord currentPoint;
   GamerChoice gamer;
 }
@@ -84,4 +83,8 @@ struct ClientTypeDTO {
   uint8 gamerId; 
   uint32 id;
   ClientType ctype;
+}
+
+struct FinishStroke {
+  GamerChoice gamer;
 }

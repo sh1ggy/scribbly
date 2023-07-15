@@ -3,7 +3,7 @@ import { useContainerSize } from "@/hooks/useContainerSize";
 import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState, Coord, ICoord, Stage } from "@/lib/schemas";
+import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState, Coord, ICoord, Stage, FinishStroke, IFinishStroke } from "@/lib/schemas";
 import { gameStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
@@ -24,6 +24,8 @@ export default function Audience() {
   const canvasRefA = useRef<HTMLCanvasElement>(null)
   const canvasRefB = useRef<HTMLCanvasElement>(null)
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [prevPointA, setPrevPointA] = useState<ICoord | null>(null);
+  const [prevPointB, setPrevPointB] = useState<ICoord | null>(null);
 
   function handleAudienceDrawing(drawData: IDrawUpdate) {
     let canvas = drawData.gamer == GamerChoice.GamerA ? canvasRefA.current : canvasRefB.current;
@@ -31,11 +33,13 @@ export default function Audience() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const prevPoint: ICoord = { x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y * canvasSize }
-    const currentPoint: ICoord = { x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y * canvasSize }
-    console.log("DRAW: ", { prevPoint, currentPoint });
+    let prevPoint = drawData.gamer == GamerChoice.GamerA ? prevPointA : prevPointB;
+    
+    // const prevPoint: ICoord = { x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y * canvasSize }
+    // const currentPoint: ICoord = { x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y * canvasSize }
+    // console.log("DRAW: ", { prevPoint, currentPoint });
 
-    drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
+    drawLine({ prevPoint: prevPoint, currentPoint: drawData.currentPoint, ctx, color })
   }
 
   function handleSendVote(userChoice: GamerChoice) {
@@ -51,7 +55,8 @@ export default function Audience() {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) return;  
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
       drawing.strokes.forEach((stroke) => {
         stroke.forEach((coord, i) => {
           const prevX = i == 0 ? stroke[i].x : stroke[i - 1].x
@@ -64,6 +69,26 @@ export default function Audience() {
     })
   }
 
+  function handleFinishStroke(finishStroke: IFinishStroke) {
+    if (!gameState) return;
+    if (finishStroke.gamer == GamerChoice.GamerA) {
+      setPrevPointA(null);
+    }
+    if (finishStroke.gamer == GamerChoice.GamerB) {
+      setPrevPointB(null);
+    }
+  }
+
+  // function handleClear() {
+  //   if (!gameState) return;
+  //   gameState.drawings.forEach((drawing, i) => {
+  //     let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
+  //     if (!canvas) return;
+  //     const ctx = canvas.getContext('2d');
+  //     if (!ctx) return;
+  //   })
+  // }
+
   useEffect(() => {
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
@@ -71,6 +96,11 @@ export default function Audience() {
         case ServerMessageType.DrawUpdate:
           handleAudienceDrawing(DrawUpdate.decode(data));
           return;
+        case ServerMessageType.FinishStroke:
+          handleFinishStroke(FinishStroke.decode(data));
+        // case ServerMessageType.Clear:
+        //   handleClear(Clear.decode(Clear.decode(data)));
+        //   return
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);
