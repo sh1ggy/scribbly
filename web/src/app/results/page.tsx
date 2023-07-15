@@ -27,7 +27,7 @@ export default async function Results() {
         <div className="stats lg:stats-horizontal shadow bg-slate-800">
           <div className="stat">
             <div className="stat-title">Audience</div>
-            <div className="stat-value">{gameState.clients.length}</div>
+            <div className="stat-value">{gameState.clients.size}</div>
             <div className="stat-desc"># of people that voted</div>
           </div>
           <div className="stat">

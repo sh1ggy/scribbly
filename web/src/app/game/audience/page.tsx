@@ -3,7 +3,7 @@ import { useContainerSize } from "@/hooks/useContainerSize";
 import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { IStroke, ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState } from "@/lib/schemas";
+import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState } from "@/lib/schemas";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
 import Link from "next/link";
@@ -11,18 +11,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function Audience() {
+  const [voting, setVoting] = useState(false);
+  const router = useRouter();
+
   const [color, setColor] = useState<string>('#000')
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(500);
-  
-  const router = useRouter();
-
   const matchesMd = useMediaQuery("(min-width: 768px)");
   const { containerRef, size: containerSize } = useContainerSize();
   const canvasRefA = useRef<HTMLCanvasElement>(null)
   const canvasRefB = useRef<HTMLCanvasElement>(null)
-
-  const [voting, setVoting] = useState(false);
 
   function handleAudienceDrawing(drawData: IDrawUpdate) {
     if (drawData.gamer == GamerChoice.GamerA) {
@@ -30,6 +28,7 @@ export default function Audience() {
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
       drawLine({ prevPoint: drawData.prevPoint, currentPoint: drawData.currentPoint, ctx, color })
     }
     if (drawData.gamer == GamerChoice.GamerB) {
@@ -48,9 +47,15 @@ export default function Audience() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
   }
 
-  // function handleGameState(gameState: IGameState) { 
-  //   gameState.drawingA.map()
-  // }
+  function handleGameState(gameState: IGameState) {
+    gameState.drawings.forEach((d, i) => {
+      let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      // DO DRAW HERE 
+    })
+  }
 
   useEffect(() => {
     const message = async (event: MessageEvent<Blob>) => {
@@ -65,7 +70,7 @@ export default function Audience() {
           setVoting(true);
           return;
         case ServerMessageType.GameState:
-          // handleGameState(GameState.decode(data));
+          handleGameState(GameState.decode(data));
           return;
       }
     }

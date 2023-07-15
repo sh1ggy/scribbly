@@ -137,8 +137,7 @@ export enum ServerMessageType {
   DrawUpdate = 5,
   FinishStroke = 6,
   VoteUpdate = 7,
-  Clear = 8,
-  NoGameState = 9,
+  NoGameState = 8,
   Restart = 28,
   AudienceLobbySTG = 29,
   DrawingSTG = 30,
@@ -259,26 +258,23 @@ export class DrawUpdate implements IDrawUpdate {
 export interface IGameState extends BebopRecord {
   id: Guid;
   stage: Stage;
-  clients: Array<ClientType>;
-  drawingA: Array<IStroke>;
-  drawingB: Array<IStroke>;
+  clients: Map<number, ClientType>;
+  drawings: Array<IDrawing>;
   prompt: string;
 }
 
 export class GameState implements IGameState {
   public id: Guid;
   public stage: Stage;
-  public clients: Array<ClientType>;
-  public drawingA: Array<IStroke>;
-  public drawingB: Array<IStroke>;
+  public clients: Map<number, ClientType>;
+  public drawings: Array<IDrawing>;
   public prompt: string;
 
   constructor(record: IGameState) {
     this.id = record.id;
     this.stage = record.stage;
     this.clients = record.clients;
-    this.drawingA = record.drawingA;
-    this.drawingB = record.drawingB;
+    this.drawings = record.drawings;
     this.prompt = record.prompt;
   }
 
@@ -309,9 +305,8 @@ export class GameState implements IGameState {
   public static validateCompatibility(record: IGameState): void {
     BebopTypeGuard.ensureGuid(record.id)
     BebopTypeGuard.ensureEnum(record.stage, Stage);
-    BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
-    BebopTypeGuard.ensureArray(record.drawingA, Stroke.validateCompatibility);
-    BebopTypeGuard.ensureArray(record.drawingB, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
+    BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
     BebopTypeGuard.ensureString(record.prompt)
   }
 
@@ -348,25 +343,16 @@ export class GameState implements IGameState {
     const before = view.length;
     view.writeGuid(record.id);
     view.writeUint32(record.stage);
-    {
-      const length0 = record.clients.length;
-      view.writeUint32(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        view.writeUint32(record.clients[i0]);
-      }
+    view.writeUint32(record.clients.size);
+    for (const [k0, v0] of record.clients) {
+      view.writeUint32(k0);
+      view.writeUint32(v0);
     }
     {
-      const length0 = record.drawingA.length;
+      const length0 = record.drawings.length;
       view.writeUint32(length0);
       for (let i0 = 0; i0 < length0; i0++) {
-        Stroke.encodeInto(record.drawingA[i0], view)
-      }
-    }
-    {
-      const length0 = record.drawingB.length;
-      view.writeUint32(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        Stroke.encodeInto(record.drawingB[i0], view)
+        Drawing.encodeInto(record.drawings[i0], view)
       }
     }
     view.writeString(record.prompt);
@@ -385,152 +371,38 @@ export class GameState implements IGameState {
     field0 = view.readGuid();
     let field1: Stage;
     field1 = view.readUint32() as Stage;
-    let field2: Array<ClientType>;
+    let field2: Map<number, ClientType>;
     {
       let length0 = view.readUint32();
-      field2 = new Array<ClientType>(length0);
+      field2 = new Map<number, ClientType>();
       for (let i0 = 0; i0 < length0; i0++) {
-        let x0: ClientType;
-        x0 = view.readUint32() as ClientType;
-        field2[i0] = x0;
+        let k0: number;
+        let v0: ClientType;
+        k0 = view.readUint32();
+        v0 = view.readUint32() as ClientType;
+        field2.set(k0, v0);
       }
     }
-    let field3: Array<IStroke>;
+    let field3: Array<IDrawing>;
     {
       let length0 = view.readUint32();
-      field3 = new Array<IStroke>(length0);
+      field3 = new Array<IDrawing>(length0);
       for (let i0 = 0; i0 < length0; i0++) {
-        let x0: IStroke;
-        x0 = Stroke.readFrom(view);
+        let x0: IDrawing;
+        x0 = Drawing.readFrom(view);
         field3[i0] = x0;
       }
     }
-    let field4: Array<IStroke>;
-    {
-      let length0 = view.readUint32();
-      field4 = new Array<IStroke>(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        let x0: IStroke;
-        x0 = Stroke.readFrom(view);
-        field4[i0] = x0;
-      }
-    }
-    let field5: string;
-    field5 = view.readString();
+    let field4: string;
+    field4 = view.readString();
     let message: IGameState = {
       id: field0,
       stage: field1,
       clients: field2,
-      drawingA: field3,
-      drawingB: field4,
-      prompt: field5,
+      drawings: field3,
+      prompt: field4,
     };
     return new GameState(message);
-  }
-}
-
-export interface IStroke extends BebopRecord {
-  locs: Array<ICursorLocation>;
-}
-
-export class Stroke implements IStroke {
-  public locs: Array<ICursorLocation>;
-
-  constructor(record: IStroke) {
-    this.locs = record.locs;
-  }
-
-  /**
-   * Serializes the current instance into a JSON-Over-Bebop string
-   */
-  public toJSON(): string {
-    return Stroke.encodeToJSON(this);
-  }
-
-  /**
-   * Serializes the specified object into a JSON-Over-Bebop string
-   */
-  public static encodeToJSON(record: IStroke): string {
-    return JSON.stringify(record, BebopJson.replacer);
-  }
-
-  /**
-   * Validates that the runtime types of members in the current instance are correct.
-   */
-  public validateTypes(): void {
-    Stroke.validateCompatibility(this);
-  }
-
-  /**
-   * Validates that the specified dynamic object can become an instance of {@link Stroke}.
-   */
-  public static validateCompatibility(record: IStroke): void {
-    BebopTypeGuard.ensureArray(record.locs, CursorLocation.validateCompatibility);
-  }
-
-  /**
-   * Unsafely creates an instance of {@link Stroke} from the specified dynamic object. No type checking is performed.
-   */
-  public static unsafeCast(record: any): IStroke {
-      return new Stroke(record);
-  }
-
-  /**
-   * Creates a new {@link Stroke} instance from a JSON-Over-Bebop string. Type checking is performed.
-   */
-  public static fromJSON(json: string): IStroke {
-    if (typeof json !== 'string' || json.trim().length === 0) {
-      throw new BebopRuntimeError(`Stroke.fromJSON: expected string`);
-    }
-    const parsed = JSON.parse(json, BebopJson.reviver);
-    Stroke.validateCompatibility(parsed);
-    return Stroke.unsafeCast(parsed);
-  }
-  public encode(): Uint8Array {
-    return Stroke.encode(this);
-  }
-
-  public static encode(record: IStroke): Uint8Array {
-    const view = BebopView.getInstance();
-    view.startWriting();
-    Stroke.encodeInto(record, view);
-    return view.toArray();
-  }
-
-  public static encodeInto(record: IStroke, view: BebopView): number {
-    const before = view.length;
-    {
-      const length0 = record.locs.length;
-      view.writeUint32(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        CursorLocation.encodeInto(record.locs[i0], view)
-      }
-    }
-    const after = view.length;
-    return after - before;
-  }
-
-  public static decode(buffer: Uint8Array): IStroke {
-    const view = BebopView.getInstance();
-    view.startReading(buffer);
-    return Stroke.readFrom(view);
-  }
-
-  public static readFrom(view: BebopView): IStroke {
-    let field0: Array<ICursorLocation>;
-    {
-      let length0 = view.readUint32();
-      field0 = new Array<ICursorLocation>(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        let x0: ICursorLocation;
-        x0 = CursorLocation.readFrom(view);
-        field0[i0] = x0;
-      }
-    }
-    let message: IStroke = {
-      locs: field0,
-    };
-    return new Stroke(message);
   }
 }
 
@@ -720,8 +592,7 @@ export interface IResultsSTG extends BebopRecord {
   id: Guid;
   outcome: GamerChoice;
   votes: Array<GamerChoice>;
-  drawingA: Array<IStroke>;
-  drawingB: Array<IStroke>;
+  drawings: Array<IDrawing>;
   clients: Array<ClientType>;
   prompt: string;
 }
@@ -730,8 +601,7 @@ export class ResultsSTG implements IResultsSTG {
   public id: Guid;
   public outcome: GamerChoice;
   public votes: Array<GamerChoice>;
-  public drawingA: Array<IStroke>;
-  public drawingB: Array<IStroke>;
+  public drawings: Array<IDrawing>;
   public clients: Array<ClientType>;
   public prompt: string;
 
@@ -739,8 +609,7 @@ export class ResultsSTG implements IResultsSTG {
     this.id = record.id;
     this.outcome = record.outcome;
     this.votes = record.votes;
-    this.drawingA = record.drawingA;
-    this.drawingB = record.drawingB;
+    this.drawings = record.drawings;
     this.clients = record.clients;
     this.prompt = record.prompt;
   }
@@ -773,8 +642,7 @@ export class ResultsSTG implements IResultsSTG {
     BebopTypeGuard.ensureGuid(record.id)
     BebopTypeGuard.ensureEnum(record.outcome, GamerChoice);
     BebopTypeGuard.ensureArray(record.votes, (value) => BebopTypeGuard.ensureEnum(value, GamerChoice));
-    BebopTypeGuard.ensureArray(record.drawingA, Stroke.validateCompatibility);
-    BebopTypeGuard.ensureArray(record.drawingB, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
     BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
     BebopTypeGuard.ensureString(record.prompt)
   }
@@ -820,17 +688,10 @@ export class ResultsSTG implements IResultsSTG {
       }
     }
     {
-      const length0 = record.drawingA.length;
+      const length0 = record.drawings.length;
       view.writeUint32(length0);
       for (let i0 = 0; i0 < length0; i0++) {
-        Stroke.encodeInto(record.drawingA[i0], view)
-      }
-    }
-    {
-      const length0 = record.drawingB.length;
-      view.writeUint32(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        Stroke.encodeInto(record.drawingB[i0], view)
+        Drawing.encodeInto(record.drawings[i0], view)
       }
     }
     {
@@ -866,48 +727,156 @@ export class ResultsSTG implements IResultsSTG {
         field2[i0] = x0;
       }
     }
-    let field3: Array<IStroke>;
+    let field3: Array<IDrawing>;
     {
       let length0 = view.readUint32();
-      field3 = new Array<IStroke>(length0);
+      field3 = new Array<IDrawing>(length0);
       for (let i0 = 0; i0 < length0; i0++) {
-        let x0: IStroke;
-        x0 = Stroke.readFrom(view);
+        let x0: IDrawing;
+        x0 = Drawing.readFrom(view);
         field3[i0] = x0;
       }
     }
-    let field4: Array<IStroke>;
+    let field4: Array<ClientType>;
     {
       let length0 = view.readUint32();
-      field4 = new Array<IStroke>(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        let x0: IStroke;
-        x0 = Stroke.readFrom(view);
-        field4[i0] = x0;
-      }
-    }
-    let field5: Array<ClientType>;
-    {
-      let length0 = view.readUint32();
-      field5 = new Array<ClientType>(length0);
+      field4 = new Array<ClientType>(length0);
       for (let i0 = 0; i0 < length0; i0++) {
         let x0: ClientType;
         x0 = view.readUint32() as ClientType;
-        field5[i0] = x0;
+        field4[i0] = x0;
       }
     }
-    let field6: string;
-    field6 = view.readString();
+    let field5: string;
+    field5 = view.readString();
     let message: IResultsSTG = {
       id: field0,
       outcome: field1,
       votes: field2,
-      drawingA: field3,
-      drawingB: field4,
-      clients: field5,
-      prompt: field6,
+      drawings: field3,
+      clients: field4,
+      prompt: field5,
     };
     return new ResultsSTG(message);
+  }
+}
+
+export interface IDrawing extends BebopRecord {
+  strokes: Array<Array<ICoord>>;
+}
+
+export class Drawing implements IDrawing {
+  public strokes: Array<Array<ICoord>>;
+
+  constructor(record: IDrawing) {
+    this.strokes = record.strokes;
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return Drawing.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IDrawing): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    Drawing.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link Drawing}.
+   */
+  public static validateCompatibility(record: IDrawing): void {
+    BebopTypeGuard.ensureArray(record.strokes, (element) => BebopTypeGuard.ensureArray(element, Coord.validateCompatibility));
+  }
+
+  /**
+   * Unsafely creates an instance of {@link Drawing} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IDrawing {
+      return new Drawing(record);
+  }
+
+  /**
+   * Creates a new {@link Drawing} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IDrawing {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`Drawing.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    Drawing.validateCompatibility(parsed);
+    return Drawing.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return Drawing.encode(this);
+  }
+
+  public static encode(record: IDrawing): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    Drawing.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IDrawing, view: BebopView): number {
+    const before = view.length;
+    {
+      const length0 = record.strokes.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        {
+          const length1 = record.strokes[i0].length;
+          view.writeUint32(length1);
+          for (let i1 = 0; i1 < length1; i1++) {
+            Coord.encodeInto(record.strokes[i0][i1], view)
+          }
+        }
+      }
+    }
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IDrawing {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return Drawing.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IDrawing {
+    let field0: Array<Array<ICoord>>;
+    {
+      let length0 = view.readUint32();
+      field0 = new Array<Array<ICoord>>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: Array<ICoord>;
+        {
+          let length1 = view.readUint32();
+          x0 = new Array<ICoord>(length1);
+          for (let i1 = 0; i1 < length1; i1++) {
+            let x1: ICoord;
+            x1 = Coord.readFrom(view);
+            x0[i1] = x1;
+          }
+        }
+        field0[i0] = x0;
+      }
+    }
+    let message: IDrawing = {
+      strokes: field0,
+    };
+    return new Drawing(message);
   }
 }
 

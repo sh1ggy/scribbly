@@ -17,8 +17,7 @@ enum ServerMessageType {
   DrawUpdate = 5; // for the audience
   FinishStroke = 6; // -- storing coords
   VoteUpdate = 7; // -- for counting votes
-  Clear = 8; 
-  NoGameState = 9;
+  NoGameState = 8;
 
   Restart = 28;
   // STAGES
@@ -43,9 +42,9 @@ struct GameState {
   string prompt;
 }
 
-struct Stroke {
-  CursorLocation[] locs;
-}
+// struct Stroke {
+//   CursorLocation[] locs;
+// }
 
 struct ClientJoined {
   ClientType newClient;
@@ -64,7 +63,7 @@ struct ResultsSTG { // keep in global state
   string prompt;
 }
 struct Drawing {
-  Stroke[] strokes;
+  Coord[][] strokes;
 }
 
 struct Clear {
