@@ -1,0 +1,98 @@
+use std::sync::{Arc, Mutex};
+
+use tokio::sync::mpsc::UnboundedSender;
+use tungstenite::Message;
+
+use crate::gen_schemas::api;
+
+use super::{Clients, GameState, InternalMessage};
+
+#[derive(Debug, Clone)]
+pub enum ClientType {
+    Gamer(u8),
+    Audience,
+    Admin,
+    Unknown,
+}
+
+impl Into<api::ClientType> for ClientType {
+    fn into(self) -> api::ClientType {
+        match self {
+            ClientType::Audience => api::ClientType::Audience,
+            ClientType::Gamer(_) => api::ClientType::Gamer,
+            ClientType::Unknown => api::ClientType::Unknown,
+            ClientType::Admin => api::ClientType::Admin,
+        }
+    }
+}
+
+impl ClientType {
+    pub fn to_dto(self, id: u32) -> api::ClientTypeDTO {
+        let mut ctype_dto = api::ClientTypeDTO {
+            ctype: self.clone().into(),
+            gamer_id: 0,
+            id,
+        };
+
+        if let ClientType::Gamer(gamer_order) = self {
+            ctype_dto.gamer_id = gamer_order;
+        }
+        ctype_dto
+    }
+}
+
+
+#[derive(Debug)]
+pub struct ClientConnection {
+    pub clients_ref: Arc<Mutex<Clients>>,
+    pub client_type: ClientType,
+    pub game_ref: Arc<Mutex<Option<GameState>>>,
+    pub client_id: u32,
+    pub internal_comms: UnboundedSender<InternalMessage>,
+}
+
+impl ClientConnection {
+    /// Understand that if you encounter a send error for this opbject, it means u have an unresolved mutex before awaiting this
+    pub async fn broadcast_message(&self, msg: &Message) {
+        let clients = self.clients_ref.lock().unwrap();
+        for (_, client) in clients.iter() {
+            let msg = msg.clone();
+            client.send(msg).unwrap();
+        }
+    }
+
+    pub async fn remove_client(&mut self, client_id: u32) {
+        let mut clients = self.clients_ref.lock().unwrap();
+        clients.remove_entry(&client_id);
+
+        if let Some(ref mut game) = self.game_ref.lock().unwrap().as_mut() {
+            game.clients.remove_entry(&client_id);
+        }
+    }
+
+    pub async fn add_client(&mut self, tx: UnboundedSender<Message>) {
+        let client_count = self.clients_ref.lock().unwrap().len();
+        self.client_id = (client_count as u32);
+        self.clients_ref.lock().unwrap().insert(self.client_id, tx);
+
+        if let Some(ref mut game) = self.game_ref.lock().unwrap().as_mut() {
+            let total_gamers = game
+                .clients
+                .iter()
+                .filter(|(id, client_type)| match client_type {
+                    ClientType::Gamer(_) => true,
+                    _ => false,
+                })
+                .count();
+
+            if (total_gamers <= 1) {
+                self.client_type = ClientType::Gamer(total_gamers as u8);
+            } else {
+                self.client_type = ClientType::Audience;
+            }
+
+            game.clients
+                .insert(self.client_id, self.client_type.clone());
+        }
+    }
+}
