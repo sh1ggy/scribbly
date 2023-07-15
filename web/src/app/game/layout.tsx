@@ -72,6 +72,7 @@ export default function DashboardLayout({
       window.SCRIBBLE_SOCK.removeEventListener('open', openConnection);
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
       window.SCRIBBLE_SOCK.removeEventListener('error', error);
+      setGameState(null);
       window.SCRIBBLE_SOCK.close();
     }
   }, [])
@@ -97,13 +98,13 @@ export default function DashboardLayout({
           <ul className="steps m-3 overflow-clip">
             <div className="flex justify-center items-center space-x-4">
               <p className="p-2 bg-secondary text-black rounded-lg">Phase</p>
-              <code className="p-1 rounded-md bg-primary">{gameState?.stage}</code>
+              <code className="p-1 rounded-md bg-primary">{gameState && Stage[gameState?.stage]}</code>
             </div>
           </ul>
         }
         <p className="space-x-3 text-sm pb-2 bg-black rounded-lg text-center">
           <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
-          <code className="bg-secondary text-black rounded-lg p-1">{`${voteCount}/${gameState && gameState.clients.size}`}</code>
+          <code className="text-secondary rounded-lg p-1">{gameState && gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size} votes`}</code>
         </p>
       </div>
       {children}

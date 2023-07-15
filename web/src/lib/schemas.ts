@@ -139,6 +139,7 @@ export enum ServerMessageType {
   FinishStroke = 6,
   VoteUpdate = 7,
   NoGameState = 8,
+  Clear = 9,
   Restart = 28,
   ResultsSTG = 33,
 }
@@ -1355,7 +1356,7 @@ export class FinishStroke implements IFinishStroke {
   }
 }
 
-export const AUDIENCE_LOBBY_TIME: number = 30000;
+export const AUDIENCE_LOBBY_TIME: number = 10000;
 
 export const DRAWING_TIME: number = 60000;
 
