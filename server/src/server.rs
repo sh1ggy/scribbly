@@ -3,12 +3,14 @@ mod handlers;
 
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{Arc, Mutex},
     thread,
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use tokio::{
+    io::{AsyncWriteExt, BufWriter},
     net::{TcpListener, TcpStream},
     sync::mpsc::{unbounded_channel, UnboundedSender},
 };
@@ -25,7 +27,7 @@ use crate::{
         api::{self, Drawing},
         client, common,
     },
-    ml,
+    ml::{self, PlaceholderModel},
     server::client_connection::send_gamestate_dto,
 };
 
@@ -39,10 +41,13 @@ type Clients = HashMap<u32, UnboundedSender<Message>>;
 
 const MAX_PLAYERS: usize = 50;
 
-type Stroke = [Vec<u8>; 2];
+type Stroke = [Vec<f32>; 2];
+type CSVDrawing = Vec<Stroke>;
 
-struct CSVData {
-    pub drawing: Vec<Stroke>,
+#[derive(Debug, Clone)]
+pub struct Prompt {
+    pub name: String,
+    pub class: u32,
 }
 
 #[derive(Debug)]
@@ -51,7 +56,9 @@ pub struct GameState {
     clients: HashMap<u32, ClientType>,
     drawings: [Vec<Vec<api::Coord>>; 2],
     stage: api::Stage,
-    prompt: String,
+    prompt: Prompt,
+    last_stage_time: u128,
+    votes: Vec<api::GamerChoice>,
 }
 
 pub enum InternalMessage {
@@ -59,18 +66,17 @@ pub enum InternalMessage {
 }
 
 // Need the lifetime specifier for model ref, which also needs to be in a generic because it is a trait
-pub struct Server<'a, T: ml::MLModel> {
-    model: &'a T,
+pub struct Server<'a> {
     server_addr: &'a str,
     // If we dont need to save clients on a global scope like this, dont bother doing so
 }
 
 // I guess this is also another way of declaring generics less verbosely
-impl<'a, T: ml::MLModel> Server<'a, T> {
+impl<'a> Server<'a> {
     // Generally recommended to use sync fn for new then a async fn for run
-    pub fn new(model: &'a T, server_addr: &'a str) -> Self {
+    pub fn new(server_addr: &'a str) -> Self {
         println!("Server created");
-        Self { model, server_addr }
+        Self { server_addr }
     }
 
     pub async fn run(&mut self) {
@@ -89,6 +95,7 @@ impl<'a, T: ml::MLModel> Server<'a, T> {
 
         let game_ref_clone = Arc::clone(&game_ref);
         let cons_ref_clone = Arc::clone(&cons_ref);
+
         // Tokio threads need an async task in them for them to be considerd async,
         tokio::spawn(async move {
             loop {
@@ -118,23 +125,105 @@ async fn handle_internal_msg(
 ) {
     match msg {
         InternalMessage::CountDownLobby => {
+            println!("TRansitioning to AudienceLobby and waiting");
             {
                 if let Some(game) = &mut *game_ref.lock().unwrap() {
                     game.stage = api::Stage::AudienceLobby;
+                    game.last_stage_time = time();
                 }
                 send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
             }
 
             tokio::time::sleep(Duration::from_millis(common::AUDIENCE_LOBBY_TIME as u64)).await;
+
+            println!("TRansitioning to Drawing");
             {
                 if let Some(game) = &mut *game_ref.lock().unwrap() {
                     game.stage = api::Stage::Drawing;
+                    game.last_stage_time = time();
                 }
             }
-            send_gamestate_dto_cring(game_ref, clients_ref).await;
+            send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
 
-            println!("Counting down lobby");
+            println!("Waiting for drawing to finish");
+
+            tokio::time::sleep(Duration::from_millis(common::DRAWING_TIME as u64)).await;
+
+            {
+                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                    game.stage = api::Stage::Voting;
+                    game.last_stage_time = time();
+                }
+            }
+
+            send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
+            // Collect all votes
+
+            tokio::time::sleep(Duration::from_millis(common::VOTING_TIME as u64)).await;
+            {
+                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                    game.stage = api::Stage::Judging;
+                    game.last_stage_time = time();
+                }
+            }
+
+            send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
+
+            finalise_game(game_ref.clone()).await;
         }
+    }
+}
+
+async fn finalise_game(game_ref: Arc<Mutex<Option<GameState>>>) {
+    let drawings;
+    let prompt;
+    let votes;
+    {
+        let mut game = game_ref.lock().unwrap();
+        let Some(game) = &mut *game else {
+        return ;
+        };
+        drawings = game.drawings.clone();
+        prompt = game.prompt.clone();
+        votes = game.votes.clone();
+    }
+
+    save_results_to_csv(
+        &drawings,
+        prompt,
+        &votes,
+    )
+    .await;
+}
+
+async fn save_results_to_csv(
+    drawings: &[Vec<Vec<api::Coord>>; 2],
+    prompt: Prompt,
+    votes: &Vec<api::GamerChoice>,
+) {
+    let mut file = tokio::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open("test.csv")
+        .await
+        .unwrap();
+    // Create a `BufWriter` for efficient writing
+    let mut writer = BufWriter::new(file);
+    for drawing in drawings.iter() {
+        let mut csv_data: CSVDrawing = Vec::new();
+        for stroke in drawing.iter() {
+            let mut stroke_def: Stroke = [Vec::new(), Vec::new()];
+            for coord in stroke.iter() {
+                stroke_def[0].push(coord.x);
+                stroke_def[1].push(coord.y);
+            }
+            csv_data.push(stroke_def);
+        }
+
+        let mut csv_string = serde_json::to_string(&csv_data).unwrap();
+        csv_string.push('\n');
+        writer.write(csv_string.as_bytes()).await.unwrap();
     }
 }
 
@@ -164,7 +253,6 @@ async fn send_gamestate_dto_cring<'a>(
             let mut drawingDto = Drawing {
                 strokes: Vec::new(),
             };
-
             for stroke in drawing.iter() {
                 // Idk why we need a ref here
                 let saved = &stroke;
@@ -180,13 +268,16 @@ async fn send_gamestate_dto_cring<'a>(
             .into_iter()
             .map(|(id, ctype)| (id, ctype.into()))
             .collect();
+        let current_time = time();
 
+        let millis_elapsed_since_stage = (current_time - game.last_stage_time) as u64;
         let gamestate_dto = api::GameState {
+            millis_elapsed_since_stage,
             id: game.id,
             clients,
             drawings,
             stage: game.stage,
-            prompt: &game.prompt.clone(),
+            prompt: &game.prompt.name.clone(),
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);
@@ -195,6 +286,12 @@ async fn send_gamestate_dto_cring<'a>(
     broadcast_message(clients_ref, &msg).await;
 }
 
+fn time() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+}
 async fn accept_connection(stream: TcpStream, conn: ClientConnection) {
     if let Err(e) = handle_connection(stream, conn).await {
         match e {

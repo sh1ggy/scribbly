@@ -1,11 +1,16 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::HashMap,
+    sync::Mutex,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use bebop::{Record, SubRecord, Guid};
+use bebop::{Guid, Record, SubRecord};
+use rand::Rng;
 use tungstenite::Message;
 
 use crate::{
     gen_schemas::{
-        api::{self, DrawUpdate},
+        api::{self, DrawUpdate, Empty},
         client,
         common::{self},
     },
@@ -34,7 +39,6 @@ pub fn get_dto_binary<'a, T: Record<'a>>(dto: T, op_code: u32) -> Vec<u8> {
 }
 
 pub async fn handle_client_message(
-
     msg_type: client::ClientMessageType,
     data: &[u8],
     conn: &mut ClientConnection,
@@ -59,16 +63,36 @@ async fn handle_admin_message(
                 {
                     let mut game = conn.game_ref.lock().unwrap();
                     let drawings = [Vec::new(), Vec::new()];
+                    let current_time = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis();
+                    //Read from a file called categories.txt and pick a random line
+                    let mut categories = std::fs::read_to_string("categories.txt")
+                        .expect("Something went wrong reading the file");
+                    //Split on newline
+                    let categories: Vec<&str> = categories.split('\n').collect();
+                    //Pick a random line
+                    let cat = rand::random::<usize>() % categories.len();
+                    let prompt = categories[cat];
+                    let prompt = crate::server::Prompt {
+                        name: prompt.to_string(),
+                        class: cat as u32,
+                    };
+
+                    let random_bytes = rand::thread_rng().gen::<[u8; 16]>();
                     *game = Some(GameState {
-                        prompt: String::from("banana"),
+                        votes: Vec::new(),
+                        last_stage_time: current_time,
+                        prompt,
                         // TODO: make guid better lole
-                        id: Guid::from_ms_bytes(&[0;16]),
+                        id: Guid::from_ms_bytes(&random_bytes),
                         stage: api::Stage::GamerSelect,
                         clients: HashMap::new(),
                         drawings,
                     });
                 }
-                
+
                 let e = common::Empty {};
                 let msg = get_dto_binary(e, api::ServerMessageType::Restart as u32);
                 println!("Sending start message {:?} bytes", msg);
@@ -123,7 +147,26 @@ async fn handle_game_message(
             drawing.push(Vec::new());
         }
         client::ClientMessageType::Clear => todo!(),
-        client::ClientMessageType::Vote => todo!(),
+        client::ClientMessageType::Vote => {
+            let vote = client::Vote::deserialize(data).unwrap();
+            {
+                let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+                    return;
+                };
+                let ClientType::Audience = conn.client_type else {
+                    return ;
+                };
+                let vote: api::GamerChoice =
+                    api::GamerChoice::try_from(vote.choice as u32).unwrap();
+                game.votes.push(vote);
+            }
+
+            conn.broadcast_message(&Message::Binary(get_dto_binary(
+                Empty {},
+                api::ServerMessageType::VoteUpdate as u32,
+            )))
+            .await;
+        }
         _ => println!("Unhandled message for game {:?}", msg_type),
     }
 }
@@ -156,7 +199,7 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
             ret_val = Some(DrawUpdate {
                 prev_point,
                 current_point,
-                gamer: gamer_choice
+                gamer: gamer_choice,
             })
         } else {
             ret_val = None;
