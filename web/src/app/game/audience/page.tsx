@@ -96,12 +96,10 @@ export default function Audience() {
 
   return (
     <div
-      className='h-[calc(100vh-157px)] bg-slate-700 flex justify-center items-center'>
+      className='h-[calc(100vh-188.5px)] bg-slate-700 flex justify-center items-center'>
       <div
         ref={containerRef}
         className={`flex ${containerSize.width > containerSize.height ? "flex-row" : "flex-col"} justify-center items-center lg:space-x-6 w-full h-full`}>
-        <p className="text-sm p-2 bg-secondary text-black w-full rounded-t-md text-center">
-          You are spectating</p>
         <div className="flex flex-col">
           <canvas
             ref={canvasRefA}
