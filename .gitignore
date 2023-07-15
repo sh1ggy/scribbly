@@ -3,3 +3,4 @@ data/**
 
 # python ipynb
 __pycache__
+.vercel

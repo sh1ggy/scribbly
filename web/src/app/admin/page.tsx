@@ -33,13 +33,20 @@ export default function Admin() {
   }
   function handleGameMode() {
     console.log("CHANGING GAME MODE");
-    let sendStageChange = new Uint8Array();
-    window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.GameModeADM))
+    let sendGameMode = new Uint8Array();
+    window.ADMIN_SOCK.send(getDTOBuffer(sendGameMode, ClientMessageType.GameModeADM))
   }
   function handleGameState(state: IGameState) {
     console.log({ state });
     setGameState(state);
   }
+
+  function handleTest() {
+    console.log("TEST");
+    let sendTest = new Uint8Array();
+    window.ADMIN_SOCK.send(getDTOBuffer(sendTest, ClientMessageType.TestADM));
+  }
+
   useEffect(() => {
     // window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
     window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
@@ -96,6 +103,12 @@ export default function Admin() {
             handleGameMode();
           }} 
           className="btn">Change Game Mode</button>
+        <button
+          onClick={((e) => {
+            e.preventDefault();
+            handleTest();
+          })}
+          className="btn">Run Python Code</button>
       </div>
     </main >
   )
