@@ -50,8 +50,10 @@ export default function Admin() {
         case ServerMessageType.GameState:
           handleGameState(GameState.decode(data));
           setNoGameState(false);
+          return;
         case ServerMessageType.NoGameState:
           setNoGameState(true);
+          return;
       }
     }
     window.ADMIN_SOCK.addEventListener('open', handleOpen);

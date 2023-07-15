@@ -53,6 +53,7 @@ export default async function Game() {
             router.push('/');
             setNoGameState(false);
           }, 5000);
+          return;
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);

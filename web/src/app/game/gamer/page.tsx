@@ -50,6 +50,10 @@ export default function Gamer() {
           setGameState(GameState.decode(data))
       }
     }
+    window.SCRIBBLE_SOCK.addEventListener('message', message);
+    return () => {
+      window.SCRIBBLE_SOCK.removeEventListener('message', message);
+    }
   }, [])
 
   useLayoutEffect(() => {
