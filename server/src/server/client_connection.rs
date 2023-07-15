@@ -105,11 +105,12 @@ impl ClientConnection {
                     _ => false,
                 })
                 .count();
-
-            if (total_gamers == 2) {
-                self.internal_comms
-                    .send(InternalMessage::CountDownLobby)
-                    .unwrap();
+            if let api::Stage::GamerSelect = game.stage {
+                if (total_gamers == 2) {
+                    self.internal_comms
+                        .send(InternalMessage::CountDownLobby)
+                        .unwrap();
+                }
             }
         }
     }
