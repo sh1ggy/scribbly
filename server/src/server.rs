@@ -89,12 +89,14 @@ async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
     if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
         let mut drawings: Vec<Drawing> = Vec::new();
         let game_drawings = game.drawings.clone();
+        println!("Game drawings: {:?}", game_drawings);
         for drawing in game_drawings.iter() {
             let mut drawingDto = Drawing {
                 strokes: Vec::new(),
             };
 
             for stroke in drawing.iter() {
+                // Idk why we need a ref here
                 let saved = &stroke;
                 drawingDto.strokes.push(SliceWrapper::Cooked(saved));
             }
@@ -242,17 +244,17 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     };
 
     conn.add_client(tx).await;
-    println!("Client added to server {:?}", conn.game_ref.lock().unwrap());
 
     let buf = get_dto_binary(ping, api::ServerMessageType::Ping as u32);
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
 
+
+    send_gamestate_dto(&mut conn).await;
+
+
     let ctype = conn.client_type.clone();
     let ctype_dto = ctype.to_dto(conn.client_id);
-
-    // TODO: BEFORE CLIENTTYPE SEND THE GAMESTATE
-    send_gamestate_dto(&mut conn).await;
 
     let buf = get_dto_binary(ctype_dto, api::ServerMessageType::ClientTypeDTO as u32);
     let msg = Message::Binary(buf);
@@ -272,8 +274,6 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
 
                         }
                         else if msg.is_binary() {
-
-                            println!("Got binary: {}",&msg);
 
                             let mut data = msg.into_data();
                             let op_code_buf = &data[0..4];

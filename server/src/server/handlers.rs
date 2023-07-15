@@ -135,7 +135,7 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
         return None;
     };
 
-    let mut drawing = &mut game.drawings[order as usize];
+    let drawing = &mut game.drawings[order as usize];
 
     if let Some(stroke) = drawing.last_mut() {
         let mut ret_val = None;
@@ -158,7 +158,7 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
                 gamer: gamer_choice
             })
         } else {
-            return None;
+            ret_val = None;
         }
 
         stroke.push(coord);
