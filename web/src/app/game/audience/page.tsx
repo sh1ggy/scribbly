@@ -3,7 +3,7 @@ import { useContainerSize } from "@/hooks/useContainerSize";
 import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { IStroke, ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote } from "@/lib/schemas";
+import { IStroke, ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState } from "@/lib/schemas";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
 import Link from "next/link";
@@ -14,26 +14,26 @@ export default function Audience() {
   const [color, setColor] = useState<string>('#000')
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(500);
-
+  
   const router = useRouter();
 
   const matchesMd = useMediaQuery("(min-width: 768px)");
   const { containerRef, size: containerSize } = useContainerSize();
-  const canvasRef1 = useRef<HTMLCanvasElement>(null)
-  const canvasRef2 = useRef<HTMLCanvasElement>(null)
+  const canvasRefA = useRef<HTMLCanvasElement>(null)
+  const canvasRefB = useRef<HTMLCanvasElement>(null)
 
   const [voting, setVoting] = useState(false);
 
   function handleAudienceDrawing(drawData: IDrawUpdate) {
     if (drawData.gamer == GamerChoice.GamerA) {
-      const canvas = canvasRef1.current;
+      const canvas = canvasRefA.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       drawLine({ prevPoint: drawData.prevPoint, currentPoint: drawData.currentPoint, ctx, color })
     }
     if (drawData.gamer == GamerChoice.GamerB) {
-      const canvas = canvasRef2.current;
+      const canvas = canvasRefB.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -48,6 +48,10 @@ export default function Audience() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
   }
 
+  // function handleGameState(gameState: IGameState) { 
+  //   gameState.drawingA.map()
+  // }
+
   useEffect(() => {
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
@@ -55,9 +59,14 @@ export default function Audience() {
         case ServerMessageType.DrawUpdate:
           console.log("DRAWING" + data);
           handleAudienceDrawing(DrawUpdate.decode(data));
+          return;
         case ServerMessageType.VotingSTG:
           console.log("COMMENCE VOTING" + data);
           setVoting(true);
+          return;
+        case ServerMessageType.GameState:
+          // handleGameState(GameState.decode(data));
+          return;
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);
@@ -81,7 +90,7 @@ export default function Audience() {
         className={`flex ${containerSize.width > containerSize.height ? "flex-row" : "flex-col"} justify-center items-center lg:space-x-6 w-full h-full`}>
         <div className="flex flex-col">
           <canvas
-            ref={canvasRef1}
+            ref={canvasRefA}
             height={canvasSize}
             width={canvasSize}
             className='bg-white border-8 rounded-lg border-secondary border-solid'
@@ -97,7 +106,7 @@ export default function Audience() {
         </div>
         <div className="flex flex-col">
           <canvas
-            ref={canvasRef2}
+            ref={canvasRefB}
             height={canvasSize}
             width={canvasSize}
             className='bg-white duration-200 border-8 rounded-lg border-red-400 border-solid'

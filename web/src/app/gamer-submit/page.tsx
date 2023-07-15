@@ -2,8 +2,8 @@
 import { useDraw } from "@/hooks/useDraw";
 import { Draw, Point, drawLine } from '@/utils/drawLine'
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ClientMessageType, ClientTypeDTO, CursorLocation } from "@/lib/schemas";
-import { getDTOBuffer } from "@/utils/bopUtils";
+import { ClientMessageType, ClientTypeDTO, CursorLocation, IClientTypeDTO, ServerMessageType } from "@/lib/schemas";
+import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 
 type DrawLineProps = {
   prevPoint: Point | null
@@ -51,6 +51,20 @@ export default function Gamer() {
         .removeEventListener('resize', calcResize)
     }
   }, []);
+
+  function handleClientType(dto: IClientTypeDTO) {
+    
+  }
+
+  useEffect(() => {
+    window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
+    // const message = async (event: MessageEvent<Blob>) => {
+    //   const { type, data } = await deserialize(event);
+    //   switch (type) {
+    //     case ServerMessageType.:
+    //       handleClientType(ClientTypeDTO.decode(data));
+    //   }
+    }, [])
 
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link
