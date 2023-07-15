@@ -261,13 +261,15 @@ async fn handle_internal_msg(
     match msg {
         InternalMessage::CountDownLobby => {
             tokio::time::sleep(Duration::from_secs(2)).await;
+            let mut clients = clients_ref.lock().unwrap();
+            broadcast_message(&mut clients, &Message::Ping("Yo".into()));
 
             println!("Counting down lobby");
         }
     }
 }
 
-pub async fn broadcast_message(clients: Clients, msg: &Message) {
+pub async fn broadcast_message(clients: &mut Clients, msg: &Message) {
     for (_, client) in clients.iter() {
         let msg = msg.clone();
         client.send(msg).unwrap();
