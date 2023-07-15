@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useDraw } from "@/hooks/useDraw";
 import { Draw, Point, drawLine } from '@/utils/drawLine'
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ClientMessageType, ClientTypeDTO, CursorLocation, GameState, ServerMessageType } from "@/lib/schemas";
+import { ClientMessageType, ClientTypeDTO, CursorLocation, GameState, ServerMessageType, Stage } from "@/lib/schemas";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
 import { gameStateAtom } from "@/lib/store";
@@ -23,19 +23,28 @@ export default function Gamer() {
   const [canvasSize, setCanvasSize] = useState(0);
 
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [judgement, setJudgement] = useState(false);
 
   const router = useRouter();
 
+  // Countdown timer
+  // TODO: invoke event to submit drawing on timeout
+  const TIMER_DELAY = 1000;
+  const [drawTimer, setDrawTimer] = useState(30);
+
   function cursorUp() {
-    console.log("STROKE COMPLETE")
-    const sendStroke = new Uint8Array();
-    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendStroke, ClientMessageType.FinishStroke))
+    if (!gameState || gameState.stage != Stage.Drawing) return
+    if (gameState.stage = Stage.Drawing) {
+      const sendStroke = new Uint8Array();
+      window.SCRIBBLE_SOCK.send(getDTOBuffer(sendStroke, ClientMessageType.FinishStroke))
+      console.log("STROKE COMPLETE")
+    }
   }
 
   function createLine({ prevPoint, currentPoint, ctx }: Draw) {
-    // socket.emit('draw-line', { prevPoint, currentPoint, color })
+    if (!gameState || gameState.stage != Stage.Drawing) return
     console.log("DRAW LINE");
-    console.log({gameState});
+    console.log({ gameState });
     drawLine({ prevPoint, currentPoint, ctx, color });
     const cursorLocation = CursorLocation.encode({
       currentPoint: {
@@ -62,17 +71,13 @@ export default function Gamer() {
     }
   }, []);
 
+
   useEffect(() => {
+    if (gameState?.stage == Stage.Voting) setJudgement(true);
+    else if (!gameState || gameState.stage != Stage.Drawing) return;
+    drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
     console.log(gameState);
   }, [gameState])
-
-  // Countdown timer
-  // TODO: invoke event to submit drawing on timeout
-  const TIMER_DELAY = 1000;
-  const [drawTimer, setDrawTimer] = useState(30);
-  useEffect(() => {
-    drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
-  }, [drawTimer])
 
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link
@@ -89,18 +94,26 @@ export default function Gamer() {
     >
       {/* <div ref={canvasContainerRef} className='flex flex-col w-screen max-h-full h-full bg-slate-700 justify-center items-center'> */}
       <div>
-        <p className="text-xl p-2 bg-secondary text-black w-full rounded-t-md text-center">{!gameState ? "Loading prompt" : gameState.prompt}</p>
-        <p className="text-4xl p-2 bg-black w-full text-center">{drawTimer}</p>
-        {/* The line becomes offset and incorrect when the page is able to scroll */}
-        <canvas
-          ref={canvasRef}
-          height={canvasSize}
-          width={canvasSize}
-          className='bg-white'
-        />
-        <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none' onClick={clear}>
-          Clear canvas
-        </button>
+        {gameState?.stage == Stage.Drawing ?
+          <>
+            <p className="text-sm p-2 bg-secondary text-black w-full rounded-t-md text-center">{!gameState ? "Loading prompt" : `You are drawing a ${gameState.prompt}`}</p>
+            <p className="text-4xl p-2 bg-black w-full text-center">{drawTimer}</p>
+            {/* The line becomes offset and incorrect when the page is able to scroll */}
+            <canvas
+              ref={canvasRef}
+              height={canvasSize}
+              width={canvasSize}
+              className={`bg-white ${gameState?.stage != Stage.Drawing && "cursor-not-allowed pointer-events-none"}`}
+            />
+            <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none' onClick={clear}>
+              Clear canvas
+            </button>
+          </>
+          :
+          <>
+            <p className="text-4xl p-2 bg-black w-full text-center">Awaiting votes</p>
+          </>
+        }
       </div>
     </div>
   )

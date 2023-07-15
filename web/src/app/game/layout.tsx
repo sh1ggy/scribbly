@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { GameState, IGameState, IPing, Ping, ServerMessageType, Stage } from "@/lib/schemas";
-import { gameStateAtom } from "@/lib/store";
+import { GameState, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
+import { gameStateAtom, resultsAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 
 export default function DashboardLayout({
@@ -15,6 +15,7 @@ export default function DashboardLayout({
   const [audience, setAudience] = useState(0);
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [results, setResults] = useAtom(resultsAtom);
 
   function handlePing(ping: IPing) {
     console.log({ ping });
@@ -22,6 +23,10 @@ export default function DashboardLayout({
   function handleGameState(gameState: IGameState) {
     console.log("FROM LAYOUT NEW GAME STATE" + { gameState });
     setGameState(gameState);
+  }
+  function handleResults(results: IResultsSTG) {
+    setResults(results);
+    router.push('/results');
   }
 
   const message = async (event: MessageEvent<Blob>) => {
@@ -33,7 +38,8 @@ export default function DashboardLayout({
       case ServerMessageType.GameState:
         handleGameState(GameState.decode(data));
         return;
-
+      case ServerMessageType.ResultsSTG:
+        handleResults(ResultsSTG.decode(data));
     }
   }
 
