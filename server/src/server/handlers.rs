@@ -119,6 +119,7 @@ async fn handle_game_message(
 
             println!("Got ping {:?}", ping);
         }
+
         client::ClientMessageType::CursorLocation => {
             let cursor = client::CursorLocation::deserialize(data).unwrap();
             let server_coord = api::Coord {
@@ -183,31 +184,19 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
     let drawing = &mut game.drawings[order as usize];
 
     if let Some(stroke) = drawing.last_mut() {
-        let mut ret_val = None;
-
-        if let Some(prev_coord) = stroke.last() {
-            let prev_point = api::Coord {
-                x: prev_coord.x,
-                y: prev_coord.y,
-            };
-
-            let current_point = api::Coord {
-                x: coord.x,
-                y: coord.y,
-            };
-            let gamer_choice = api::GamerChoice::try_from((order as u32) + 1).unwrap();
-
-            ret_val = Some(DrawUpdate {
-                prev_point,
-                current_point,
-                gamer: gamer_choice,
-            })
-        } else {
-            ret_val = None;
-        }
+        let current_point = api::Coord {
+            x: coord.x,
+            y: coord.y,
+        };
+        let gamer_choice = api::GamerChoice::try_from((order as u32) + 1).unwrap();
 
         stroke.push(coord);
-        ret_val
+
+        Some(
+            DrawUpdate {
+            current_point,
+            gamer: gamer_choice,
+        })
     } else {
         // If no strokes yet in the drawing, means this is our first point
         drawing.push(vec![coord]);
