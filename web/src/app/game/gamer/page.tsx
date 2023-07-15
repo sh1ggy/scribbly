@@ -15,8 +15,8 @@ type DrawLineProps = {
   color: string
 }
 
-export const CANVAS_SIZE = 350
 export default function Gamer() {
+  const CANVAS_SIZE = 400
 
   const [color, setColor] = useState<string>('#000')
   const { canvasRef, clear } = useDraw(createLine, cursorUp);

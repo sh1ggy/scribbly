@@ -11,8 +11,8 @@ import { useAtom } from "jotai";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CANVAS_SIZE } from "../gamer/page";
 export default function Audience() {
+  const CANVAS_SIZE = 400
   const [voting, setVoting] = useState(false);
   const router = useRouter();
 
