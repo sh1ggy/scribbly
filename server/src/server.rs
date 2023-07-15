@@ -1,5 +1,5 @@
-mod handlers;
 mod client_connection;
+mod handlers;
 
 use std::{
     collections::HashMap,
@@ -19,7 +19,7 @@ use tokio_tungstenite::{
 
 // Just so we dont have to type out crate::ml every time
 use crate::{
-    gen_schemas::{api, client, common::{self, Coord}},
+    gen_schemas::{api, client, common},
     ml,
 };
 
@@ -40,17 +40,21 @@ pub enum ClientType {
     Unknown,
 }
 
-impl ClientType {
-    pub fn to_dto(self, id: u32) -> api::ClientTypeDTO {
-        let ctype: api::ClientType = match self {
+impl Into<api::ClientType> for ClientType {
+    fn into(self) -> api::ClientType {
+        match self {
             ClientType::Audience => api::ClientType::Audience,
             ClientType::Gamer(_) => api::ClientType::Gamer,
             ClientType::Unknown => api::ClientType::Unknown,
             ClientType::Admin => api::ClientType::Admin,
-        };
+        }
+    }
+}
 
+impl ClientType {
+    pub fn to_dto(self, id: u32) -> api::ClientTypeDTO {
         let mut ctype_dto = api::ClientTypeDTO {
-            ctype,
+            ctype: self.into(),
             gamer_id: 0,
             id,
         };
@@ -62,7 +66,7 @@ impl ClientType {
     }
 }
 
-type Stroke = [Vec<u8>;2];
+type Stroke = [Vec<u8>; 2];
 
 struct CSVData {
     pub drawing: Vec<Stroke>,
@@ -72,40 +76,44 @@ struct CSVData {
 pub struct GameState {
     id: Guid,
     clients: HashMap<u32, ClientType>,
-    drawings: [Vec<Vec<Coord>>; 2],
+    drawings: [Vec<Vec<api::Coord>>; 2],
     stage: api::Stage,
+    prompt: String,
 }
 
-impl GameState {
-    // pub fn to_dto(self) -> api::GameState {
-    //     let mut dto = api::GameState { id: self.id, stage: self.stage, clients: , drawings: (), prompt: () }
-            
-
-    //     for stroke in self.drawings.iter() {
-    //         let mut stroke_dto = api::Stroke {
-    //             strokes: Vec::new(),
-    //         };
-
-    //         for coord in stroke.iter() {
-    //             let coord_dto = api::Coord {
-    //                 x: coord.x,
-    //                 y: coord.y,
-    //             };
-    //             stroke_dto.strokes.push(coord_dto);
-    //         }
-
-    //         dto.drawings.push(stroke_dto);
-    //     }
-
-    //     for (id, client_type) in self.clients.iter() {
-    //         dto.clients.push(client_type.to_dto(*id));
-    //     }
-
-    //     dto
-
-    // }
+impl<'a> Into<api::GameState<'a>> for GameState {
+    fn into(self) -> api::GameState<'a> {
+        let drawings = self
+            .drawings
+            .into_iter()
+            .map(|drawing| {
+                api::Drawing {
+                    strokes: drawing.into_iter().map(|stroke| api::Stroke {
+                        locs: stroke
+                            .into_iter()
+                            .map(|coord| api::Coord {
+                                x: coord.x,
+                                y: coord.y,
+                            })
+                            .collect(),
+                    }),
+                }
+                .collect()
+            })
+            .collect();
+        api::GameState {
+            id: self.id,
+            clients: self
+                .clients
+                .into_iter()
+                .map(|(id, ctype)| (id, ctype.into()))
+                .collect(),
+            drawings,
+            stage: self.stage,
+            prompt: &self.prompt.clone(),
+        }
+    }
 }
-
 
 #[derive(Debug)]
 pub struct ClientConnection {
@@ -235,10 +243,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let ctype = conn.client_type.clone();
     let ctype_dto = ctype.to_dto(conn.client_id);
 
-
-    // TODO: BEFORE CLIENTTYPE SEND THE GAMESTATE 
-
-
+    // TODO: BEFORE CLIENTTYPE SEND THE GAMESTATE
 
     let buf = get_dto_binary(ctype_dto, api::ServerMessageType::ClientTypeDTO as u32);
     let msg = Message::Binary(buf);
