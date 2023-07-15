@@ -112,7 +112,6 @@ export default function Gamer() {
           :
           <>
             <p className="text-4xl p-2 w-full text-center">You've been chosen to draw</p>
-            <p className="text-4xl p-2 w-full text-center">Loading</p>
           </>
         }
       </div>
