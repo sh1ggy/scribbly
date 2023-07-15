@@ -1,4 +1,5 @@
-const uint32 AUDIENCE_LOBBY_TIME = 30000;
+// const uint32 AUDIENCE_LOBBY_TIME = 30000;
+const uint32 AUDIENCE_LOBBY_TIME = 10000;
 // const uint32 AUDIENCE_LOBBY_TIME = 30;
 const uint32 DRAWING_TIME = 60000;
 // const uint32 DRAWING_TIME = 5000;

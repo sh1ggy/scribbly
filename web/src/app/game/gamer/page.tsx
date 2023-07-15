@@ -16,6 +16,8 @@ type DrawLineProps = {
 }
 
 export default function Gamer() {
+  const CANVAS_SIZE = 400
+
   const [color, setColor] = useState<string>('#000')
   const { canvasRef, clear } = useDraw(createLine, cursorUp);
 
@@ -48,8 +50,8 @@ export default function Gamer() {
     drawLine({ prevPoint, currentPoint, ctx, color });
     const cursorLocation = CursorLocation.encode({
       currentPoint: {
-        x: currentPoint.x / canvasSize,
-        y: currentPoint.y / canvasSize
+        x: currentPoint.x / CANVAS_SIZE,
+        y: currentPoint.y / CANVAS_SIZE,
       }
     })
     window.SCRIBBLE_SOCK.send(getDTOBuffer(cursorLocation, ClientMessageType.CursorLocation));
@@ -86,7 +88,6 @@ export default function Gamer() {
     <div ref={canvasContainerRef} className='
         flex 
         flex-col 
-        w-screen
         max-h-[calc(100vh-188.5px)]
         h-[calc(100vh-157px)]
         bg-slate-700
@@ -98,12 +99,12 @@ export default function Gamer() {
       <div>
         {gameState?.stage == Stage.Drawing &&
           <>
-            <p className="text-4xl p-2 bg-black w-full text-center">{drawTimer}</p>
+            <p className="text-4xl p-2 rounded-t-lg bg-black w-full text-center">{drawTimer}</p>
             {/* The line becomes offset and incorrect when the page is able to scroll */}
             <canvas
               ref={canvasRef}
-              height={canvasSize}
-              width={canvasSize}
+              height={CANVAS_SIZE}
+              width={CANVAS_SIZE}
               className={`bg-white ${gameState?.stage != Stage.Drawing && "cursor-not-allowed pointer-events-none"}`}
             />
             <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none' onClick={clear}>
