@@ -42,20 +42,6 @@ export default function Gamer() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(cursorLocation, ClientMessageType.CursorLocation));
   }
 
-  useEffect(() => {
-    const message = async (event: MessageEvent<Blob>) => {
-      const { type, data } = await deserialize(event);
-      switch (type) {
-        case ServerMessageType.GameState:
-          setGameState(GameState.decode(data))
-      }
-    }
-    window.SCRIBBLE_SOCK.addEventListener('message', message);
-    return () => {
-      window.SCRIBBLE_SOCK.removeEventListener('message', message);
-    }
-  }, [])
-
   useLayoutEffect(() => {
     const calcResize = () => {
       const canvasParentDims = canvasContainerRef.current?.getBoundingClientRect();

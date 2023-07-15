@@ -15,7 +15,7 @@ export default async function Results() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRefB = useRef<HTMLCanvasElement>(null); // need to draw this in with game state
 
-  function handleGameState(gameState: IGameState) {
+  function handleGameState() {
     gameState.drawings.forEach((d, i) => {
       let canvas = i == 0 ? canvasRef.current : canvasRefB.current
       if (!canvas) return;
@@ -28,21 +28,10 @@ export default async function Results() {
       })
     })
   }
-
   useEffect(() => {
-    const message = async (event: MessageEvent<Blob>) => {
-      const { type, data } = await deserialize(event);
-      switch (type) {
-        case ServerMessageType.GameState:
-          handleGameState(GameState.decode(data));
-          return;
-      }
-    }
-    // window.SCRIBBLE_SOCK.addEventListener('message', message);
-    // return () => {
-    //   window.SCRIBBLE_SOCK.removeEventListener('message', message);
-    // }
-  }, [])
+    handleGameState()
+  }, [gameState])
+  
   return (
     <div className="flex flex-col h-[calc(100vh-40px)] justify-center items-center bg-slate-700">
       <div className="flex flex-col items-center justify-center">
