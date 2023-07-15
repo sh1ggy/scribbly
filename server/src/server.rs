@@ -85,7 +85,10 @@ pub struct GameState {
 }
 // THE LIFETIME SPECIFIER HERE MAKES SURE THAT SLICE WRAPPER IS ABLE TO KEEP THE REFERENCE TO THE STROKE ARRAYS
 async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
-    let mut msg = Message::Text("Yo".into());
+    let e = api::Empty {};
+
+    let mut msg = Message::Binary(get_dto_binary(e, api::ServerMessageType::NoGameState as u32));
+
     if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
         let mut drawings: Vec<Drawing> = Vec::new();
         let game_drawings = game.drawings.clone();
@@ -120,7 +123,8 @@ async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);
-    }
+    } 
+    
 
     conn.broadcast_message(&msg).await;
 }
