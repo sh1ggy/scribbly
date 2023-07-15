@@ -4,11 +4,13 @@ mod handlers;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
+    thread,
+    time::Duration,
 };
 
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::mpsc::{unbounded_channel, UnboundedSender, },
+    sync::mpsc::{unbounded_channel, UnboundedSender},
 };
 
 use futures_util::{SinkExt, StreamExt};
@@ -130,12 +132,17 @@ async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
     conn.broadcast_message(&msg).await;
 }
 
+pub enum InternalMessage {
+    CountDownLobby,
+}
+
 #[derive(Debug)]
 pub struct ClientConnection {
     pub clients_ref: Arc<Mutex<Clients>>,
     pub client_type: ClientType,
     pub game_ref: Arc<Mutex<Option<GameState>>>,
     pub client_id: u32,
+    pub internal_comms: UnboundedSender<InternalMessage>,
 }
 
 impl ClientConnection {
@@ -211,23 +218,61 @@ impl<'a, T: ml::MLModel> Server<'a, T> {
         let clients_con = HashMap::new();
         let cons_ref = Arc::new(Mutex::new(clients_con));
 
+        let (internal_tx, mut internal_rx) = unbounded_channel();
 
-        // tokio::spawn(async move || {
-        //     println!("ML thread started");
+        let game_ref_clone = Arc::clone(&game_ref);
+        let cons_ref_clone = Arc::clone(&cons_ref);
+        // Tokio threads need an async task in them for them to be considerd async,
+        tokio::spawn(async move {
+            loop {
+                let msg = internal_rx.recv().await.unwrap();
 
-        // });
-
+                // handle_internal_msg(msg, game_ref_clone, cons_ref_clone).await;
+                handle_internal_msg(msg, game_ref.clone(), cons_ref.clone()).await;
+                // send_gamestate_dto(&mut ClientConnection {
+                //     clients_ref: cons_ref.clone(),
+                //     client_type: ClientType::Unknown,
+                //     client_id: 0,
+                //     game_ref: game_ref.clone(),
+                // })
+                // .await;
+            }
+        });
 
         while let Ok((stream, _)) = listener.accept().await {
             let cc = ClientConnection {
-                clients_ref: cons_ref.clone(),
+                clients_ref: cons_ref_clone.clone(),
                 client_type: ClientType::Unknown,
                 client_id: 0,
-                game_ref: game_ref.clone(),
+                game_ref: game_ref_clone.clone(),
+                internal_comms: internal_tx.clone(),
             };
 
             tokio::spawn(accept_connection(stream, cc));
         }
+    }
+}
+
+async fn handle_internal_msg(
+    msg: InternalMessage,
+    game_ref: Arc<Mutex<Option<GameState>>>,
+    clients_ref: Arc<Mutex<Clients>>,
+) {
+    match msg {
+        InternalMessage::CountDownLobby => {
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            let mut clients = clients_ref.lock().unwrap();
+            broadcast_message(&mut clients, &Message::Ping("Yo".into()));
+
+            println!("Counting down lobby");
+        }
+    }
+}
+
+pub async fn broadcast_message(clients: &mut Clients, msg: &Message) {
+    for (_, client) in clients.iter() {
+        let msg = msg.clone();
+        client.send(msg).unwrap();
     }
 }
 

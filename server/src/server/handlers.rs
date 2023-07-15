@@ -34,6 +34,7 @@ pub fn get_dto_binary<'a, T: Record<'a>>(dto: T, op_code: u32) -> Vec<u8> {
 }
 
 pub async fn handle_client_message(
+
     msg_type: client::ClientMessageType,
     data: &[u8],
     conn: &mut ClientConnection,
