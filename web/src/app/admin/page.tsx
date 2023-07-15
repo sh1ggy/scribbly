@@ -3,10 +3,11 @@ import { ClientMessageType, GameState, IGameState, IPing, Ping, ServerMessageTyp
 import { gameStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Admin() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [noGameState, setNoGameState] = useState(false);
   function handlePing(msg: IPing) {
     console.log({ msg });
     let sendPing = Ping.encode({
@@ -29,8 +30,13 @@ export default function Admin() {
     let sendStageChange = new Uint8Array();
     window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.StageChangeADM))
   }
+  function handleGameMode() {
+    console.log("CHANGING GAME MODE");
+    let sendStageChange = new Uint8Array();
+    window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.GameModeADM))
+  }
   function handleGameState(state: IGameState) {
-    console.log({state});
+    console.log({ state });
     setGameState(state);
   }
   useEffect(() => {
@@ -43,6 +49,9 @@ export default function Admin() {
           return;
         case ServerMessageType.GameState:
           handleGameState(GameState.decode(data));
+          setNoGameState(false);
+        case ServerMessageType.NoGameState:
+          setNoGameState(true);
       }
     }
     window.ADMIN_SOCK.addEventListener('open', handleOpen);
@@ -58,9 +67,13 @@ export default function Admin() {
     <main className="flex flex-col gap-4 h-[calc(100vh-56px)] p-24 bg-slate-700">
       <h1 className="text-4xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
       <div className="flex flex-col space-y-4">
-        <p>{gameState.id.toString()}</p>
-        <p>{gameState.stage}</p>
-        <p>{gameState.clients}</p>
+        {!noGameState &&
+          <>
+            <p>{gameState.id.toString()}</p>
+            <p>{gameState.stage}</p>
+            <p>{gameState.clients}</p>
+          </>
+        }
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -73,8 +86,13 @@ export default function Admin() {
             handleStageChange();
           }}
           className="btn">Switch Stage</button>
-        <button className="btn">Change Game Mode</button>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            handleGameMode();
+          }} 
+          className="btn">Change Game Mode</button>
       </div>
-    </main>
+    </main >
   )
 }

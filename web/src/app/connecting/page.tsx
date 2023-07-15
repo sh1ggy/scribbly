@@ -1,13 +1,14 @@
 'use client'
-import { IClientTypeDTO, ClientType, ServerMessageType, ClientTypeDTO, IPing, Ping } from '@/lib/schemas';
+import { IClientTypeDTO, ClientType, ServerMessageType, ClientTypeDTO, IPing, Ping, GameState } from '@/lib/schemas';
 import { gameStateAtom, userStateAtom } from '@/lib/store';
 import { useAtom } from 'jotai';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { deserialize } from '@/utils/bopUtils';
 
 export default async function Game() {
+  const [noGameState, setNoGameState] = useState(false);
   const [gameState, setGameState] = useAtom(gameStateAtom);
   // Get the atom for user
   const [user, setUser] = useAtom(userStateAtom);
@@ -20,6 +21,7 @@ export default async function Game() {
   function handleClientType(dto: IClientTypeDTO) {
     console.log(dto);
     setUser(dto);
+    if (dto.ctype == ClientType.Unknown) router.push(`/`); // send user back to home if unknown?
     if (dto.ctype == ClientType.Audience) router.push(`/game/audience`)
     if (dto.ctype == ClientType.Gamer) router.push(`/game/gamer`)
     return;
@@ -27,6 +29,7 @@ export default async function Game() {
 
   useEffect(() => {
     window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
+    let timer: string | number | NodeJS.Timeout | undefined;
 
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
@@ -41,20 +44,40 @@ export default async function Game() {
           console.log("START");
           router.push("/");
           return;
+        case ServerMessageType.GameState:
+          setGameState(GameState.decode(data));
+          return;
+        case ServerMessageType.NoGameState:
+          setNoGameState(true);
+          timer = setTimeout(() => {
+            router.push('/');
+            setNoGameState(false);
+          }, 5000);
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);
     return () => {
+      clearTimeout(timer);
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
   return (
     <main className="flex h-[calc(100vh-56px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
-      <p className='text-4xl'>LOADING</p>
-      <div className='flex flex-col'>
-        <Link href="/game/audience">audience</Link>
-        <Link href="/game/gamer">gamer</Link>
-      </div>
+      {noGameState
+        ?
+        <>
+          <p className='text-4xl'>NO ACTIVE GAME</p>
+          <p className='text-lg'>Routing home</p>
+        </>
+        :
+        <>
+          <p className='text-4xl'>LOADING</p>
+          <div className='flex flex-col'>
+            <Link href="/game/audience">audience</Link>
+            <Link href="/game/gamer">gamer</Link>
+          </div>
+        </>
+      }
     </main>
   )
 }

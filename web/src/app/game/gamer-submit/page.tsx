@@ -1,12 +1,9 @@
 'use client'
-import Link from "next/link";
 import { useDraw } from "@/hooks/useDraw";
 import { Draw, Point, drawLine } from '@/utils/drawLine'
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ClientMessageType, ClientTypeDTO, CursorLocation, GameState, ServerMessageType } from "@/lib/schemas";
-import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
-import { useAtom } from "jotai";
-import { gameStateAtom } from "@/lib/store";
+import { ClientMessageType, ClientTypeDTO, CursorLocation } from "@/lib/schemas";
+import { getDTOBuffer } from "@/utils/bopUtils";
 
 type DrawLineProps = {
   prevPoint: Point | null
@@ -21,8 +18,6 @@ export default function Gamer() {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(0);
 
-  const [gameState, setGameState] = useAtom(gameStateAtom);
-
   function cursorUp() {
     console.log("STROKE COMPLETE")
     const sendStroke = new Uint8Array();
@@ -30,7 +25,6 @@ export default function Gamer() {
   }
 
   function createLine({ prevPoint, currentPoint, ctx }: Draw) {
-    // socket.emit('draw-line', { prevPoint, currentPoint, color })
     console.log("DRAW LINE");
     drawLine({ prevPoint, currentPoint, ctx, color });
     const cursorLocation = CursorLocation.encode({
@@ -41,16 +35,6 @@ export default function Gamer() {
     })
     window.SCRIBBLE_SOCK.send(getDTOBuffer(cursorLocation, ClientMessageType.CursorLocation));
   }
-
-  useEffect(() => {
-    const message = async (event: MessageEvent<Blob>) => {
-      const { type, data } = await deserialize(event);
-      switch (type) {
-        case ServerMessageType.GameState:
-          setGameState(GameState.decode(data))
-      }
-    }
-  }, [])
 
   useLayoutEffect(() => {
     const calcResize = () => {
@@ -68,14 +52,6 @@ export default function Gamer() {
     }
   }, []);
 
-  // Countdown timer
-  // TODO: invoke event to submit drawing on timeout
-  const TIMER_DELAY = 1000;
-  const [drawTimer, setDrawTimer] = useState(30);
-  useEffect(() => {
-    drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
-  }, [drawTimer])
-
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link
     <div ref={canvasContainerRef} className='
@@ -89,11 +65,7 @@ export default function Gamer() {
         items-center
         '
     >
-      {/* <div ref={canvasContainerRef} className='flex flex-col w-screen max-h-full h-full bg-slate-700 justify-center items-center'> */}
       <div>
-        <p className="text-4xl p-2 bg-black w-full rounded-t-md text-center">{gameState.prompt}</p>
-        <p className="text-4xl p-2 bg-black w-full rounded-t-md text-center">{drawTimer}</p>
-        {/* The line becomes offset and incorrect when the page is able to scroll */}
         <canvas
           ref={canvasRef}
           height={canvasSize}

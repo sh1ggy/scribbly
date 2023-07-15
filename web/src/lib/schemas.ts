@@ -26,6 +26,7 @@ export enum ClientMessageType {
   StageChangeADM = 26,
   StartADM = 27,
   EndADM = 28,
+  GameModeADM = 29,
 }
 
 export interface IVote extends BebopRecord {
@@ -137,6 +138,7 @@ export enum ServerMessageType {
   FinishStroke = 6,
   VoteUpdate = 7,
   Clear = 8,
+  NoGameState = 9,
   Restart = 28,
   AudienceLobbySTG = 29,
   DrawingSTG = 30,
@@ -260,6 +262,7 @@ export interface IGameState extends BebopRecord {
   clients: Array<ClientType>;
   drawingA: Array<IStroke>;
   drawingB: Array<IStroke>;
+  prompt: string;
 }
 
 export class GameState implements IGameState {
@@ -268,6 +271,7 @@ export class GameState implements IGameState {
   public clients: Array<ClientType>;
   public drawingA: Array<IStroke>;
   public drawingB: Array<IStroke>;
+  public prompt: string;
 
   constructor(record: IGameState) {
     this.id = record.id;
@@ -275,6 +279,7 @@ export class GameState implements IGameState {
     this.clients = record.clients;
     this.drawingA = record.drawingA;
     this.drawingB = record.drawingB;
+    this.prompt = record.prompt;
   }
 
   /**
@@ -307,6 +312,7 @@ export class GameState implements IGameState {
     BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
     BebopTypeGuard.ensureArray(record.drawingA, Stroke.validateCompatibility);
     BebopTypeGuard.ensureArray(record.drawingB, Stroke.validateCompatibility);
+    BebopTypeGuard.ensureString(record.prompt)
   }
 
   /**
@@ -363,6 +369,7 @@ export class GameState implements IGameState {
         Stroke.encodeInto(record.drawingB[i0], view)
       }
     }
+    view.writeString(record.prompt);
     const after = view.length;
     return after - before;
   }
@@ -408,12 +415,15 @@ export class GameState implements IGameState {
         field4[i0] = x0;
       }
     }
+    let field5: string;
+    field5 = view.readString();
     let message: IGameState = {
       id: field0,
       stage: field1,
       clients: field2,
       drawingA: field3,
       drawingB: field4,
+      prompt: field5,
     };
     return new GameState(message);
   }
@@ -713,6 +723,7 @@ export interface IResultsSTG extends BebopRecord {
   drawingA: Array<IStroke>;
   drawingB: Array<IStroke>;
   clients: Array<ClientType>;
+  prompt: string;
 }
 
 export class ResultsSTG implements IResultsSTG {
@@ -722,6 +733,7 @@ export class ResultsSTG implements IResultsSTG {
   public drawingA: Array<IStroke>;
   public drawingB: Array<IStroke>;
   public clients: Array<ClientType>;
+  public prompt: string;
 
   constructor(record: IResultsSTG) {
     this.id = record.id;
@@ -730,6 +742,7 @@ export class ResultsSTG implements IResultsSTG {
     this.drawingA = record.drawingA;
     this.drawingB = record.drawingB;
     this.clients = record.clients;
+    this.prompt = record.prompt;
   }
 
   /**
@@ -763,6 +776,7 @@ export class ResultsSTG implements IResultsSTG {
     BebopTypeGuard.ensureArray(record.drawingA, Stroke.validateCompatibility);
     BebopTypeGuard.ensureArray(record.drawingB, Stroke.validateCompatibility);
     BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
+    BebopTypeGuard.ensureString(record.prompt)
   }
 
   /**
@@ -826,6 +840,7 @@ export class ResultsSTG implements IResultsSTG {
         view.writeUint32(record.clients[i0]);
       }
     }
+    view.writeString(record.prompt);
     const after = view.length;
     return after - before;
   }
@@ -881,6 +896,8 @@ export class ResultsSTG implements IResultsSTG {
         field5[i0] = x0;
       }
     }
+    let field6: string;
+    field6 = view.readString();
     let message: IResultsSTG = {
       id: field0,
       outcome: field1,
@@ -888,6 +905,7 @@ export class ResultsSTG implements IResultsSTG {
       drawingA: field3,
       drawingB: field4,
       clients: field5,
+      prompt: field6,
     };
     return new ResultsSTG(message);
   }
