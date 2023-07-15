@@ -39,7 +39,7 @@ export default function Game() {
 
   }, [user])
 
-  
+
 
   useEffect(() => {
     window.SCRIBBLE_SOCK = new WebSocket(process.env.NEXT_PUBLIC_WS);
@@ -60,10 +60,10 @@ export default function Game() {
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
-  if (!user) return ( <></>)
+  if (!user) return (<></>)
 
   return (
-    <main className="flex h-[calc(100vh-56px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
+    <main className="flex max-h-[calc(100vh-188.5px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
       <>
 
 
