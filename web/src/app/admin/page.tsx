@@ -50,8 +50,8 @@ export default function Admin() {
   useEffect(() => {
     // window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
     // window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
-    window.ADMIN_SOCK = new WebSocket(process.env.NEXT_PUBLIC_WS as string);
-    console.log("connecting", process.env.NEXT_PUBLIC_WS as string)
+    window.ADMIN_SOCK = new WebSocket(process.env.NEXT_PUBLIC_WS);
+    console.log("connecting", process.env.NEXT_PUBLIC_WS)
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
