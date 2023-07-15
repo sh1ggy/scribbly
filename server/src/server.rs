@@ -8,7 +8,7 @@ use std::{
 
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::mpsc::{unbounded_channel, UnboundedSender},
+    sync::mpsc::{unbounded_channel, UnboundedSender, },
 };
 
 use futures_util::{SinkExt, StreamExt};
@@ -87,7 +87,10 @@ pub struct GameState {
 async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
     let e = api::Empty {};
 
-    let mut msg = Message::Binary(get_dto_binary(e, api::ServerMessageType::NoGameState as u32));
+    let mut msg = Message::Binary(get_dto_binary(
+        e,
+        api::ServerMessageType::NoGameState as u32,
+    ));
 
     if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
         let mut drawings: Vec<Drawing> = Vec::new();
@@ -122,8 +125,7 @@ async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);
-    } 
-    
+    }
 
     conn.broadcast_message(&msg).await;
 }
@@ -141,11 +143,11 @@ impl ClientConnection {
     pub async fn broadcast_message(&self, msg: &Message) {
         let clients = self.clients_ref.lock().unwrap();
         for (_, client) in clients.iter() {
-            let client = client.clone();
             let msg = msg.clone();
-            tokio::spawn(async move {
-                client.send(msg).unwrap();
-            });
+            client.send(msg).unwrap();
+            // tokio::spawn(async move {
+            //     client.send(msg).unwrap();
+            // });
         }
     }
 
@@ -252,9 +254,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
 
-
     send_gamestate_dto(&mut conn).await;
-
 
     let ctype = conn.client_type.clone();
     let ctype_dto = ctype.to_dto(conn.client_id);
@@ -301,8 +301,12 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
             },
 
             rx_msg = rx.recv() => {
-                let rx_msg = rx_msg.unwrap();
-                ws_sender.send(rx_msg).await?;
+                if let Some(rx_msg) = rx_msg {
+                    ws_sender.send(rx_msg).await?;
+                }
+                else {
+                    println!("No message from rx channel");
+                }
             },
         }
     }

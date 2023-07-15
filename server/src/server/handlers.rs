@@ -57,7 +57,7 @@ async fn handle_admin_message(
                 // unscope the mutex before await because the future can be across 2 threads
                 {
                     let mut game = conn.game_ref.lock().unwrap();
-                    let mut drawings = [Vec::new(), Vec::new()];
+                    let drawings = [Vec::new(), Vec::new()];
                     *game = Some(GameState {
                         prompt: String::from("banana"),
                         // TODO: make guid better lole
@@ -67,6 +67,7 @@ async fn handle_admin_message(
                         drawings,
                     });
                 }
+                
                 let e = common::Empty {};
                 let msg = get_dto_binary(e, api::ServerMessageType::Restart as u32);
                 println!("Sending start message {:?} bytes", msg);
