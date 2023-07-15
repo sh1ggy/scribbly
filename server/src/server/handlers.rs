@@ -148,7 +148,21 @@ async fn handle_game_message(
             let drawing = &mut game.drawings[order as usize];
             drawing.push(Vec::new());
         }
-        client::ClientMessageType::Clear => todo!(),
+        client::ClientMessageType::Clear => {
+            let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+                return;
+            };
+            let ClientType::Gamer(order) = conn.client_type else {
+                return ;
+            };
+            let drawing = &mut game.drawings[order as usize];
+            drawing.clear();
+
+            let msg = Message::Binary(get_dto_binary(
+               api::Clear { gamer: api::GamerChoice::try_from((order as u32) + 1).unwrap()}, 
+                api::ServerMessageType::Clear as u32,
+            ));
+        }
         client::ClientMessageType::Vote => {
             let vote = client::Vote::deserialize(data).unwrap();
             {
@@ -184,22 +198,19 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
     let drawing = &mut game.drawings[order as usize];
 
     if let Some(stroke) = drawing.last_mut() {
-        let current_point = api::Coord {
-            x: coord.x,
-            y: coord.y,
-        };
-        let gamer_choice = api::GamerChoice::try_from((order as u32) + 1).unwrap();
-
         stroke.push(coord);
-
-        Some(
-            DrawUpdate {
-            current_point,
-            gamer: gamer_choice,
-        })
     } else {
-        // If no strokes yet in the drawing, means this is our first point
         drawing.push(vec![coord]);
-        None
     }
+
+    let gamer_choice = api::GamerChoice::try_from((order as u32) + 1).unwrap();
+    let current_point = api::Coord {
+        x: coord.x,
+        y: coord.y,
+    };
+
+    Some(DrawUpdate {
+        current_point,
+        gamer: gamer_choice,
+    })
 }
