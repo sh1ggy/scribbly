@@ -70,7 +70,7 @@ export default function DashboardLayout({
       <div className="flex flex-col lg:justify-center">
         {matches ?
           <>
-            <code className="bg-secondary text-black text-center p-1">You are {userState.ctype == ClientType.Gamer ? "drawing" : "spectating"}</code>
+            <code className="bg-secondary text-black text-center p-1">You are {userState.ctype == ClientType.Gamer ? `drawing ${gameState && gameState.prompt}` : "spectating"}</code>
 
             {gameState &&
               <ul className="steps m-3 overflow-clip">
