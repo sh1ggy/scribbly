@@ -80,6 +80,7 @@ export default function Admin() {
     <main className="flex flex-col gap-4 h-[calc(100vh-56px)] p-24 bg-slate-700">
       <h1 className="text-4xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
       <div className="flex flex-col space-y-4">
+        <p>{process.env.NEXT_PUBLIC_WS}</p>
         {gameState &&
           <div>
             <p>GUID: {gameState.id.toString()}</p>
