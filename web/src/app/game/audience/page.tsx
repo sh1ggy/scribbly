@@ -30,10 +30,10 @@ export default function Audience() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
-    const prevPoint: ICoord = {x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y * canvasSize}
-    const currentPoint: ICoord = {x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y * canvasSize}
-    console.log("DRAW: ", {prevPoint, currentPoint});
+
+    const prevPoint: ICoord = { x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y * canvasSize }
+    const currentPoint: ICoord = { x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y * canvasSize }
+    console.log("DRAW: ", { prevPoint, currentPoint });
 
     drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
   }
@@ -56,8 +56,8 @@ export default function Audience() {
         stroke.forEach((coord, i) => {
           const prevX = i == 0 ? stroke[i].x : stroke[i - 1].x
           const prevY = i == 0 ? stroke[i].y : stroke[i - 1].y
-          const prevPoint: ICoord = {x: prevX * canvasSize, y: prevY * canvasSize}
-          const currentPoint: ICoord = {x: coord.x * canvasSize, y: coord.y * canvasSize}
+          const prevPoint: ICoord = { x: prevX * canvasSize, y: prevY * canvasSize }
+          const currentPoint: ICoord = { x: coord.x * canvasSize, y: coord.y * canvasSize }
           drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
         })
       })
@@ -100,6 +100,8 @@ export default function Audience() {
       <div
         ref={containerRef}
         className={`flex ${containerSize.width > containerSize.height ? "flex-row" : "flex-col"} justify-center items-center lg:space-x-6 w-full h-full`}>
+        <p className="text-sm p-2 bg-secondary text-black w-full rounded-t-md text-center">
+          You are spectating</p>
         <div className="flex flex-col">
           <canvas
             ref={canvasRefA}

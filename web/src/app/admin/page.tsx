@@ -77,17 +77,21 @@ export default function Admin() {
   }, [])
 
   return (
-    <main className="flex flex-col gap-4 h-[calc(100vh-56px)] p-24 bg-slate-700">
-      <h1 className="text-4xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
+    <main className="flex flex-col text-center gap-4 h-[calc(100vh-56px)] p-24 bg-slate-700">
+      <h1 className="text-2xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
       <div className="flex flex-col space-y-4">
-        <p>{process.env.NEXT_PUBLIC_WS}</p>
-        {gameState &&
-          <div>
-            <p>GUID: {gameState.id.toString()}</p>
-            <p>Stage:  {gameState.stage}</p>
-            <p>Clients: {gameState.clients.size}</p>
-          </div>
-        }
+        <div className="rounded-lg bg-primary">
+          <code>
+            <p>{process.env.NEXT_PUBLIC_WS}</p>
+            {gameState &&
+              <>
+                <p>GUID: {gameState.id.toString()}</p>
+                <p>Stage:  {gameState.stage}</p>
+                <p>Clients: {gameState.clients.size}</p>
+              </>
+            }
+          </code>
+        </div>
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -104,7 +108,7 @@ export default function Admin() {
           onClick={(e) => {
             e.preventDefault();
             handleGameMode();
-          }} 
+          }}
           className="btn">Change Game Mode</button>
         <button
           onClick={((e) => {
