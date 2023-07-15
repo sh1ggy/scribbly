@@ -47,15 +47,16 @@ export default function Audience() {
 
   function handleGameState() {
     if (!gameState) return;
-    gameState.drawings.forEach((d, i) => {
+    gameState.drawings.forEach((drawing, i) => {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      d.strokes.forEach((stroke) => {
+      drawing.strokes.forEach((stroke) => {
         stroke.forEach((coord, i) => {
-          if (i == 0) return;
-          const prevPoint: ICoord = {x: stroke[i - 1].x * canvasSize, y: stroke[i - 1].y * canvasSize}
+          const prevX = i == 0 ? stroke[i].x : stroke[i - 1].x
+          const prevY = i == 0 ? stroke[i].y : stroke[i - 1].y
+          const prevPoint: ICoord = {x: prevX * canvasSize, y: prevY * canvasSize}
           const currentPoint: ICoord = {x: coord.x * canvasSize, y: coord.y * canvasSize}
           drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
         })

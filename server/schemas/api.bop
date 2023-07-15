@@ -59,7 +59,7 @@ struct ResultsSTG { // keep in global state
   GamerChoice outcome;
   GamerChoice[] votes;
   Drawing[] drawings;
-  ClientType[] clients;
+  map[uint32, ClientType] clients;
   string prompt;
 }
 struct Drawing {

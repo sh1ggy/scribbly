@@ -594,7 +594,7 @@ export interface IResultsSTG extends BebopRecord {
   outcome: GamerChoice;
   votes: Array<GamerChoice>;
   drawings: Array<IDrawing>;
-  clients: Array<ClientType>;
+  clients: Map<number, ClientType>;
   prompt: string;
 }
 
@@ -603,7 +603,7 @@ export class ResultsSTG implements IResultsSTG {
   public outcome: GamerChoice;
   public votes: Array<GamerChoice>;
   public drawings: Array<IDrawing>;
-  public clients: Array<ClientType>;
+  public clients: Map<number, ClientType>;
   public prompt: string;
 
   constructor(record: IResultsSTG) {
@@ -644,7 +644,7 @@ export class ResultsSTG implements IResultsSTG {
     BebopTypeGuard.ensureEnum(record.outcome, GamerChoice);
     BebopTypeGuard.ensureArray(record.votes, (value) => BebopTypeGuard.ensureEnum(value, GamerChoice));
     BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
-    BebopTypeGuard.ensureArray(record.clients, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
+    BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
     BebopTypeGuard.ensureString(record.prompt)
   }
 
@@ -695,12 +695,10 @@ export class ResultsSTG implements IResultsSTG {
         Drawing.encodeInto(record.drawings[i0], view)
       }
     }
-    {
-      const length0 = record.clients.length;
-      view.writeUint32(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        view.writeUint32(record.clients[i0]);
-      }
+    view.writeUint32(record.clients.size);
+    for (const [k0, v0] of record.clients) {
+      view.writeUint32(k0);
+      view.writeUint32(v0);
     }
     view.writeString(record.prompt);
     const after = view.length;
@@ -738,14 +736,16 @@ export class ResultsSTG implements IResultsSTG {
         field3[i0] = x0;
       }
     }
-    let field4: Array<ClientType>;
+    let field4: Map<number, ClientType>;
     {
       let length0 = view.readUint32();
-      field4 = new Array<ClientType>(length0);
+      field4 = new Map<number, ClientType>();
       for (let i0 = 0; i0 < length0; i0++) {
-        let x0: ClientType;
-        x0 = view.readUint32() as ClientType;
-        field4[i0] = x0;
+        let k0: number;
+        let v0: ClientType;
+        k0 = view.readUint32();
+        v0 = view.readUint32() as ClientType;
+        field4.set(k0, v0);
       }
     }
     let field5: string;
