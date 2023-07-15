@@ -3,7 +3,7 @@ import { useContainerSize } from "@/hooks/useContainerSize";
 import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState, Coord, ICoord } from "@/lib/schemas";
+import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState, Coord, ICoord, Stage } from "@/lib/schemas";
 import { gameStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
@@ -71,10 +71,6 @@ export default function Audience() {
         case ServerMessageType.DrawUpdate:
           handleAudienceDrawing(DrawUpdate.decode(data));
           return;
-        case ServerMessageType.VotingSTG:
-          console.log("COMMENCE VOTING" + data);
-          setVoting(true);
-          return;
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);
@@ -84,7 +80,11 @@ export default function Audience() {
   }, [])
 
   useEffect(() => {
+    if (!gameState) return;
     handleGameState();
+    if (gameState.stage == Stage.Voting) {
+      setVoting(true);
+    }
   }, [gameState, canvasSize])
 
   useEffect(() => {

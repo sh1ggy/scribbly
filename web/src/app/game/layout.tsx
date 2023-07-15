@@ -17,6 +17,7 @@ export default function DashboardLayout({
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const [userState, setUserState] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
+  const [voteCount, setVoteCount] = useState(0);
 
   function handlePing(ping: IPing) {
     console.log({ ping });
@@ -41,6 +42,8 @@ export default function DashboardLayout({
         return;
       case ServerMessageType.ResultsSTG:
         handleResults(ResultsSTG.decode(data));
+      case ServerMessageType.VoteUpdate:
+        setVoteCount(voteCount + 1);
     }
   }
 
@@ -74,11 +77,11 @@ export default function DashboardLayout({
 
             {gameState &&
               <ul className="steps m-3 overflow-clip">
-                <li className={`step ${gameState.stage == Stage.GamerSelect && 'step-secondary'}`}>Start</li>
-                <li className={`step ${gameState.stage == Stage.Drawing && 'step-secondary'}`}>Drawing</li>
-                <li className={`step ${gameState.stage == Stage.Voting && 'step-secondary'}`}>Voting</li>
-                <li className={`step ${gameState.stage == Stage.Judging && 'step-secondary'}`}>Judging</li>
-                <li className={`step ${gameState.stage == Stage.Results && 'step-secondary'}`}>Results</li>
+                <li className={`step ${gameState.stage >= Stage.AudienceLobby && 'step-secondary'}`}>Start</li>
+                <li className={`step ${gameState.stage >= Stage.Drawing && 'step-secondary'}`}>Drawing</li>
+                <li className={`step ${gameState.stage >= Stage.Voting && 'step-secondary'}`}>Voting</li>
+                <li className={`step ${gameState.stage >= Stage.Judging && 'step-secondary'}`}>Judging</li>
+                <li className={`step ${gameState.stage >= Stage.Results && 'step-secondary'}`}>Results</li>
               </ul>
             }
           </>
@@ -90,8 +93,9 @@ export default function DashboardLayout({
             </div>
           </ul>
         }
-        <p className="text-sm pb-2 bg-black rounded-lg text-center">
+        <p className="space-x-3 text-sm pb-2 bg-black rounded-lg text-center">
           <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
+          <code className="bg-secondary text-black rounded-lg p-1">{`${voteCount}/${gameState && gameState.clients.size}`}</code>
         </p>
       </div>
       {children}

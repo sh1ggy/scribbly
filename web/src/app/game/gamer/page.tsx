@@ -75,10 +75,12 @@ export default function Gamer() {
   useEffect(() => {
     if (gameState?.stage == Stage.Voting) setJudgement(true);
     else if (!gameState || gameState.stage != Stage.Drawing) return;
-    drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
     console.log(gameState);
   }, [gameState])
 
+  useEffect(() => {
+    drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
+  }, [drawTimer])
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link
     <div ref={canvasContainerRef} className='
@@ -107,11 +109,6 @@ export default function Gamer() {
             <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none' onClick={clear}>
               Clear canvas
             </button>
-          </>
-        }
-        {gameState && gameState?.stage < Stage.Drawing &&
-          <>
-            <p className="text-4xl p-2 w-full text-center">Loading</p>
           </>
         }
         {gameState && gameState?.stage > Stage.Drawing &&
