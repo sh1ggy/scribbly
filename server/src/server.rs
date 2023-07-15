@@ -178,6 +178,7 @@ async fn finalise_game(game_ref: Arc<Mutex<Option<GameState>>>) {
     let drawings;
     let prompt;
     let votes;
+    let guid;
     {
         let mut game = game_ref.lock().unwrap();
         let Some(game) = &mut *game else {
@@ -186,12 +187,15 @@ async fn finalise_game(game_ref: Arc<Mutex<Option<GameState>>>) {
         drawings = game.drawings.clone();
         prompt = game.prompt.clone();
         votes = game.votes.clone();
+        guid = game.id.clone();
     }
 
     save_results_to_csv(
         &drawings,
         prompt,
         &votes,
+        guid
+        
     )
     .await;
 }
@@ -200,17 +204,18 @@ async fn save_results_to_csv(
     drawings: &[Vec<Vec<api::Coord>>; 2],
     prompt: Prompt,
     votes: &Vec<api::GamerChoice>,
+    game_id: Guid
 ) {
     let mut file = tokio::fs::OpenOptions::new()
         .write(true)
         .create(true)
         .append(true)
-        .open("results.csv")
+        .open("../results.csv")
         .await
         .unwrap();
     // Create a `BufWriter` for efficient writing
     let mut writer = BufWriter::new(file);
-    for drawing in drawings.iter() {
+    for (gamer_id, drawing) in drawings.iter().enumerate() {
         let mut csv_data: CSVDrawing = Vec::new();
         for stroke in drawing.iter() {
             let mut stroke_def: Stroke = [Vec::new(), Vec::new()];
@@ -223,7 +228,20 @@ async fn save_results_to_csv(
 
         let mut csv_string = serde_json::to_string(&csv_data).unwrap();
         csv_string.push('\n');
-        writer.write(csv_string.as_bytes()).await.unwrap();
+        // Format the string tobe comma seperated
+        //Drawing, key, word, game_id, vote
+        let gamer_id = api::GamerChoice::try_from((gamer_id as u32) +1).unwrap();
+        let sum_count = votes.iter().count();
+        let csv_entry = format!(
+            "{},{},{},{},{}",
+            csv_string,
+            prompt.class.clone(),
+            prompt.name.clone(),
+            game_id,
+            votes.iter().filter(|v| (**v == gamer_id)).count() as f32 / sum_count as f32);
+
+
+        writer.write(csv_entry.as_bytes()).await.unwrap();
     }
 }
 
