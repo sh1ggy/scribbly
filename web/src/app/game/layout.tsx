@@ -74,6 +74,7 @@ export default function DashboardLayout({
       window.SCRIBBLE_SOCK.removeEventListener('error', error);
       setGameState(null);
       window.SCRIBBLE_SOCK.close();
+      router.push('/');
     }
   }, [])
 

@@ -25,7 +25,13 @@ module.exports = {
           "secondary": "#62d140",
         }
       },
-      'light',
+      {
+        'light':
+        {
+          "primary": "#2a303c",
+          "secondary": "#62d140",
+        }
+      }
     ]
   }
 }

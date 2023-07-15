@@ -99,7 +99,7 @@ export default function Gamer() {
       <div>
         {gameState?.stage == Stage.Drawing &&
           <>
-            <p className="text-4xl p-2 rounded-lg bg-black w-full text-center">{drawTimer}</p>
+            <p className="text-4xl p-2 rounded-t-lg bg-black w-full text-center">{drawTimer}</p>
             {/* The line becomes offset and incorrect when the page is able to scroll */}
             <canvas
               ref={canvasRef}
