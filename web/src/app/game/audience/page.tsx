@@ -3,7 +3,7 @@ import { useContainerSize } from "@/hooks/useContainerSize";
 import { useDraw } from "@/hooks/useDraw";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWindowSize } from "@/hooks/useWindowSize";
-import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState } from "@/lib/schemas";
+import { ICursorLocation, ServerMessageType, DrawUpdate, IDrawUpdate, GamerChoice, ClientMessageType, CursorLocation, IVote, Vote, GameState, IGameState, Coord, ICoord } from "@/lib/schemas";
 import { gameStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { Draw, drawLine } from "@/utils/drawLine";
@@ -26,21 +26,16 @@ export default function Audience() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
 
   function handleAudienceDrawing(drawData: IDrawUpdate) {
-    if (drawData.gamer == GamerChoice.GamerA) {
-      const canvas = canvasRefA.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+    let canvas = drawData.gamer == GamerChoice.GamerA ? canvasRefA.current : canvasRefB.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const prevPoint: ICoord = {x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y}
+    const currentPoint: ICoord = {x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y}
+    console.log({prevPoint, currentPoint});
 
-      drawLine({ prevPoint: drawData.prevPoint, currentPoint: drawData.currentPoint, ctx, color })
-    }
-    if (drawData.gamer == GamerChoice.GamerB) {
-      const canvas = canvasRefB.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      drawLine({ prevPoint: drawData.prevPoint, currentPoint: drawData.currentPoint, ctx, color })
-    }
+    drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
   }
 
   function handleSendVote(userChoice: GamerChoice) {
@@ -50,8 +45,9 @@ export default function Audience() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
   }
 
-  function handleGameState() {
-    gameState.drawings.forEach((d, i) => {
+  async function handleGameState() {
+    console.log("GDRAW", gameState.drawings);
+    await gameState.drawings.forEach((d, i) => {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
