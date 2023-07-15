@@ -96,7 +96,7 @@ export default function Gamer() {
       <div>
         {gameState?.stage == Stage.Drawing ?
           <>
-            <p className="text-sm p-2 bg-secondary text-black w-full rounded-t-md text-center">{!gameState ? "Loading prompt" : `You are drawing a ${gameState.prompt}`}</p>
+            <p className="text-sm p-2 bg-secondary text-black w-full rounded-t-md text-center">{!gameState ? "Loading prompt" : `You are drawing: ${gameState.prompt}`}</p>
             <p className="text-4xl p-2 bg-black w-full text-center">{drawTimer}</p>
             {/* The line becomes offset and incorrect when the page is able to scroll */}
             <canvas
@@ -111,7 +111,8 @@ export default function Gamer() {
           </>
           :
           <>
-            <p className="text-4xl p-2 bg-black w-full text-center">Awaiting votes</p>
+            <p className="text-4xl p-2 w-full text-center">You've been chosen to draw</p>
+            <p className="text-4xl p-2 w-full text-center">Loading</p>
           </>
         }
       </div>
