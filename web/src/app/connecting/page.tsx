@@ -1,11 +1,14 @@
 'use client'
-import { IClientTypeDTO, ClientType, ServerMessageType, ClientTypeDTO, IPing, Ping, GameState, IGameState } from '@/lib/schemas';
+import { IClientTypeDTO, ClientType, ServerMessageType, ClientTypeDTO, IPing, Ping, GameState, IGameState, AUDIENCE_LOBBY_TIME } from '@/lib/schemas';
 import { gameStateAtom, userStateAtom } from '@/lib/store';
 import { useAtom } from 'jotai';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { deserialize } from '@/utils/bopUtils';
+import { useTimer } from 'react-timer-hook';
+import Timer from '@/components/Timer';
+
 
 export default async function Game() {
   const [noGameState, setNoGameState] = useState(false);
@@ -21,16 +24,26 @@ export default async function Game() {
   function handleClientType(dto: IClientTypeDTO) {
     console.log(dto);
     setUser(dto);
-    if (dto.ctype == ClientType.Unknown) router.push(`/`); // send user back to home if unknown?
-    if (dto.ctype == ClientType.Audience) router.push(`/game/audience`)
-    if (dto.ctype == ClientType.Gamer) router.push(`/game/gamer`)
     return;
   }
+
+  function handleLobby() {
+    let timer = setTimeout(() => {
+      if (user.ctype == ClientType.Unknown) router.push(`/`); // send user back to home if unknown?
+      if (user.ctype == ClientType.Audience) router.push(`/game/audience`)
+      if (user.ctype == ClientType.Gamer) router.push(`/game/gamer`)
+
+    }, AUDIENCE_LOBBY_TIME) // MINUS INSERT TIME REMAINING
+
+  }
+
 
   function handleGameState(gameState: IGameState) {
     console.log({ gameState });
     setGameState(gameState);
   }
+
+
 
   useEffect(() => {
     // window.SCRIBBLE_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
@@ -69,19 +82,19 @@ export default async function Game() {
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
     }
   }, [])
+
+  useEffect(() => {
+    if (!gameState) return;
+    handleLobby();
+  }, [gameState])
   return (
     <main className="flex h-[calc(100vh-56px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
-      {noGameState
-        ?
-        <>
-          <p className='text-4xl'>NO ACTIVE GAME</p>
-          <p className='text-lg'>Routing home</p>
-        </>
-        :
-        <>
-          <p className='text-4xl'>LOADING</p>
-        </>
-      }
+      <>
+      {/* <Timer expiryTimestamp={time} /> */}
+
+        {/* <p>{lobbyTimer} seconds left</p> */}
+        <p className='text-4xl'>Waiting on players</p>
+      </>
     </main>
   )
 }

@@ -140,10 +140,6 @@ export enum ServerMessageType {
   VoteUpdate = 7,
   NoGameState = 8,
   Restart = 28,
-  AudienceLobbySTG = 29,
-  DrawingSTG = 30,
-  VotingSTG = 31,
-  JudgingSTG = 32,
   ResultsSTG = 33,
 }
 
@@ -1272,6 +1268,8 @@ export class ClientTypeDTO implements IClientTypeDTO {
 export const AUDIENCE_LOBBY_TIME: number = 30000;
 
 export const DRAWING_TIME: number = 60000;
+
+export const RESULTS_DRUMROLL: number = 5000;
 
 export interface ICoord extends BebopRecord {
   x: number;
