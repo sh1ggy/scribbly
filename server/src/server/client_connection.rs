@@ -106,7 +106,7 @@ impl ClientConnection {
                 })
                 .count();
 
-            if (total_gamers >= 2) {
+            if (total_gamers == 2) {
                 self.internal_comms
                     .send(InternalMessage::CountDownLobby)
                     .unwrap();
