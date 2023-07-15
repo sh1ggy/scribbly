@@ -38,9 +38,8 @@ struct DrawUpdate {
 struct GameState {
   guid id;
   Stage stage;
-  ClientType[] clients;
-  Stroke[] drawingA;
-  Stroke[] drawingB;
+  map[uint32, ClientType] clients;
+  Drawing[] drawings;
   string prompt;
 }
 
@@ -60,10 +59,12 @@ struct ResultsSTG { // keep in global state
   guid id;
   GamerChoice outcome;
   GamerChoice[] votes;
-  Stroke[] drawingA; // show both 
-  Stroke[] drawingB;
+  Drawing[] drawings;
   ClientType[] clients;
   string prompt;
+}
+struct Drawing {
+  Stroke[] strokes;
 }
 
 struct Clear {

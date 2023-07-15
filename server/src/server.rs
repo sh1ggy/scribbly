@@ -70,9 +70,43 @@ struct CSVData {
 
 #[derive(Debug)]
 pub struct GameState {
+    id: Guid,
     clients: HashMap<u32, ClientType>,
     drawings: [Vec<Vec<Coord>>; 2],
+    stage: api::Stage,
 }
+
+impl GameState {
+    // pub fn to_dto(self) -> api::GameState {
+    //     let mut dto = api::GameState { id: self.id, stage: self.stage, clients: , drawings: (), prompt: () }
+            
+
+    //     for stroke in self.drawings.iter() {
+    //         let mut stroke_dto = api::Stroke {
+    //             strokes: Vec::new(),
+    //         };
+
+    //         for coord in stroke.iter() {
+    //             let coord_dto = api::Coord {
+    //                 x: coord.x,
+    //                 y: coord.y,
+    //             };
+    //             stroke_dto.strokes.push(coord_dto);
+    //         }
+
+    //         dto.drawings.push(stroke_dto);
+    //     }
+
+    //     for (id, client_type) in self.clients.iter() {
+    //         dto.clients.push(client_type.to_dto(*id));
+    //     }
+
+    //     dto
+
+    // }
+}
+
+
 #[derive(Debug)]
 pub struct ClientConnection {
     pub clients_ref: Arc<Mutex<Clients>>,

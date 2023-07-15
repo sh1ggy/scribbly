@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Mutex};
 
-use bebop::{Record, SubRecord};
+use bebop::{Record, SubRecord, Guid};
 use tungstenite::Message;
 
 use crate::{
@@ -60,6 +60,8 @@ async fn handle_admin_message(
                     let mut game = conn.game_ref.lock().unwrap();
                     let mut drawings = [Vec::new(), Vec::new()];
                     *game = Some(GameState {
+                        id: Guid::from_ms_bytes(&[0;16]),
+                        stage: api::Stage::GamerSelect,
                         clients: HashMap::new(),
                         drawings,
                     });
