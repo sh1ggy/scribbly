@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Mutex};
 
-use bebop::{Record, SubRecord};
+use bebop::{Record, SubRecord, Guid};
 use tungstenite::Message;
 
 use crate::{
@@ -60,6 +60,8 @@ async fn handle_admin_message(
                     let mut game = conn.game_ref.lock().unwrap();
                     let mut drawings = [Vec::new(), Vec::new()];
                     *game = Some(GameState {
+                        id: Guid::from_ms_bytes(&[0;16]),
+                        stage: api::Stage::GamerSelect,
                         clients: HashMap::new(),
                         drawings,
                     });
@@ -96,17 +98,27 @@ async fn handle_game_message(
                 y: cursor.current_point.y,
             };
             let draw_update = save_coord_to_game_state(server_coord, conn);
-
-            let msg = get_dto_binary(cursor, api::ServerMessageType::DrawUpdate as u32);
-            let msg = Message::Binary(msg);
-            conn.broadcast_message(&msg).await;
+            if let Some(draw_update) = draw_update {
+                let msg = get_dto_binary(draw_update, api::ServerMessageType::DrawUpdate as u32);
+                let msg = Message::Binary(msg);
+                conn.broadcast_message(&msg).await;
+            }
         }
 
         client::ClientMessageType::AuthADM => {
             println!("Upgrading client number {:?} to admin", conn.client_id);
             conn.client_type = ClientType::Admin;
         }
-        client::ClientMessageType::FinishStroke => todo!(),
+        client::ClientMessageType::FinishStroke => {
+            let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+                return;
+            };
+            let ClientType::Gamer(order) = conn.client_type else {
+                return ;
+            };
+            let drawing = &mut game.drawings[order as usize];
+            drawing.push(Vec::new());
+        }
         client::ClientMessageType::Clear => todo!(),
         client::ClientMessageType::Vote => todo!(),
         _ => println!("Unhandled message for game {:?}", msg_type),
