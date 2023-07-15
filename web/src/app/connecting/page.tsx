@@ -27,13 +27,14 @@ export default async function Game() {
     return;
   }
 
-  async function handleGameState(gameState: IGameState) {
+  function handleGameState(gameState: IGameState) {
     console.log({ gameState });
-    await setGameState(gameState);
+    setGameState(gameState);
   }
 
   useEffect(() => {
-    window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
+    window.SCRIBBLE_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
+    console.log(`ws://${process.env.NEXT_PUBLIC_IP}:8001`)
     let timer: string | number | NodeJS.Timeout | undefined;
 
     const message = async (event: MessageEvent<Blob>) => {

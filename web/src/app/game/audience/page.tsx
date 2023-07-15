@@ -31,9 +31,9 @@ export default function Audience() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    const prevPoint: ICoord = {x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y}
-    const currentPoint: ICoord = {x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y}
-    console.log({prevPoint, currentPoint});
+    const prevPoint: ICoord = {x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y * canvasSize}
+    const currentPoint: ICoord = {x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y * canvasSize}
+    console.log("DRAW: ", {prevPoint, currentPoint});
 
     drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
   }
@@ -45,7 +45,7 @@ export default function Audience() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
   }
 
-  async function handleGameState() {
+  function handleGameState() {
     if (!gameState) return;
     gameState.drawings.forEach((d, i) => {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
@@ -68,7 +68,6 @@ export default function Audience() {
       const { type, data } = await deserialize(event);
       switch (type) {
         case ServerMessageType.DrawUpdate:
-          console.log("DRAWING" + data);
           handleAudienceDrawing(DrawUpdate.decode(data));
           return;
         case ServerMessageType.VotingSTG:
@@ -85,7 +84,7 @@ export default function Audience() {
 
   useEffect(() => {
     handleGameState();
-  }, [gameState])
+  }, [gameState, canvasSize])
 
   useEffect(() => {
     if (containerSize.height < containerSize.width)

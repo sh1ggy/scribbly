@@ -1,8 +1,9 @@
 'use client'
-import { ClientMessageType, GameState, IGameState, IPing, Ping, ServerMessageType } from "@/lib/schemas";
+import { ClientMessageType, GameState, IGameState, IPing, Ping, ServerMessageType, Stage } from "@/lib/schemas";
 import { gameStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
+import { env } from "process";
 import { useEffect, useState } from "react";
 
 export default function Admin() {
@@ -35,12 +36,13 @@ export default function Admin() {
     let sendStageChange = new Uint8Array();
     window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.GameModeADM))
   }
-  async function handleGameState(state: IGameState) {
+  function handleGameState(state: IGameState) {
     console.log({ state });
-    await setGameState(state);
+    setGameState(state);
   }
   useEffect(() => {
-    window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
+    // window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
+    window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
@@ -70,11 +72,11 @@ export default function Admin() {
       <h1 className="text-4xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
       <div className="flex flex-col space-y-4">
         {gameState &&
-          <>
-            <p>{gameState.id.toString()}</p>
-            <p>{gameState.stage}</p>
-            <p>{gameState.clients}</p>
-          </>
+          <div>
+            <p>GUID: {gameState.id.toString()}</p>
+            <p>Stage:  {gameState.stage}</p>
+            <p>Clients: {gameState.clients.size}</p>
+          </div>
         }
         <button
           onClick={(e) => {

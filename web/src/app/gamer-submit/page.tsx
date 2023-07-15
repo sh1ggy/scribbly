@@ -57,7 +57,7 @@ export default function Gamer() {
   }
 
   useEffect(() => {
-    window.SCRIBBLE_SOCK = new WebSocket('ws://localhost:8001');
+    window.SCRIBBLE_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
