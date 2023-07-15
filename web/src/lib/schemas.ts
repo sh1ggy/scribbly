@@ -27,6 +27,7 @@ export enum ClientMessageType {
   StartADM = 27,
   EndADM = 28,
   GameModeADM = 29,
+  TestADM = 30,
 }
 
 export interface IVote extends BebopRecord {

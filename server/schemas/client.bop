@@ -17,6 +17,7 @@ enum ClientMessageType {
   Start_ADM = 27; // empty struct
   End_ADM = 28;
   GameMode_ADM = 29;
+  Test_ADM = 30;
 }
 
 struct Vote {
