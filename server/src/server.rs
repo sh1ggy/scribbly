@@ -201,6 +201,11 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let ctype = conn.client_type.clone();
     let ctype_dto = ctype.to_dto(conn.client_id);
 
+
+    // TODO: BEFORE CLIENTTYPE SEND THE GAMESTATE 
+
+
+
     let buf = get_dto_binary(ctype_dto, api::ServerMessageType::ClientTypeDTO as u32);
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
