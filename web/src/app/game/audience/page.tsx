@@ -56,9 +56,10 @@ export default function Audience() {
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      d.strokes.forEach((s) => {
-        s.forEach((c, i) => {
-          drawLine({ prevPoint: s[i - 1], currentPoint: c, ctx, color })
+      d.strokes.forEach((stroke) => {
+        stroke.forEach((coord, i) => {
+          if (i == 0) return;
+          drawLine({ prevPoint: stroke[i - 1], currentPoint: coord, ctx, color })
         })
       })
     })
