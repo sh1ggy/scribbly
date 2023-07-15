@@ -1273,9 +1273,9 @@ export class ClientTypeDTO implements IClientTypeDTO {
   }
 }
 
-export const AUDIENCE_LOBBY_TIME: number = 30000;
+export const AUDIENCE_LOBBY_TIME: number = 30;
 
-export const DRAWING_TIME: number = 60000;
+export const DRAWING_TIME: number = 5000;
 
 export const RESULTS_DRUMROLL: number = 5000;
 

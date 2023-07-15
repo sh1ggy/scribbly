@@ -43,6 +43,10 @@ export default async function Game() {
     setGameState(gameState);
   }
 
+  useEffect(() => {
+    console.log({user})
+  }, [user])
+
 
 
   useEffect(() => {
@@ -92,7 +96,7 @@ export default async function Game() {
       <>
       {/* <Timer expiryTimestamp={time} /> */}
 
-        {/* <p>{lobbyTimer} seconds left</p> */}
+        <p>You are player type: {ClientType[user.ctype]}</p>
         <p className='text-4xl'>Waiting on players</p>
       </>
     </main>
