@@ -16,6 +16,7 @@ enum ClientMessageType {
   StageChange_ADM = 26;
   Start_ADM = 27; // empty struct
   End_ADM = 28;
+  GameMode_ADM = 29;
 }
 
 struct Vote {

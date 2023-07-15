@@ -18,9 +18,10 @@ enum ServerMessageType {
   FinishStroke = 6; // -- storing coords
   VoteUpdate = 7; // -- for counting votes
   Clear = 8; 
+  NoGameState = 9;
 
-  // STAGES
   Restart = 28;
+  // STAGES
   AudienceLobbySTG = 29; 
   DrawingSTG = 30; // timer on client -- timer on client is single source of truth (server authoritative)
   VotingSTG = 31; 
@@ -40,6 +41,7 @@ struct GameState {
   ClientType[] clients;
   Stroke[] drawingA;
   Stroke[] drawingB;
+  string prompt;
 }
 
 struct Stroke {
@@ -61,6 +63,7 @@ struct ResultsSTG { // keep in global state
   Stroke[] drawingA; // show both 
   Stroke[] drawingB;
   ClientType[] clients;
+  string prompt;
 }
 
 struct Clear {

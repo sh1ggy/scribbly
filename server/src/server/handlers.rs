@@ -65,7 +65,7 @@ async fn handle_admin_message(
                     });
                 }
                 let e = common::Empty {};
-                let msg = get_dto_binary(e, api::ServerMessageType::Start as u32);
+                let msg = get_dto_binary(e, api::ServerMessageType::Restart as u32);
                 println!("Sending start message {:?} bytes", msg);
                 let msg = Message::Binary(msg);
                 conn.broadcast_message(&msg).await;
