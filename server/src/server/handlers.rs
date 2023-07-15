@@ -60,6 +60,7 @@ async fn handle_admin_message(
                     let mut game = conn.game_ref.lock().unwrap();
                     let mut drawings = [Vec::new(), Vec::new()];
                     *game = Some(GameState {
+                        // TODO: make guid better lole
                         id: Guid::from_ms_bytes(&[0;16]),
                         stage: api::Stage::GamerSelect,
                         clients: HashMap::new(),
