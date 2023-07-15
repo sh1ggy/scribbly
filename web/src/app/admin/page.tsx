@@ -49,7 +49,9 @@ export default function Admin() {
 
   useEffect(() => {
     // window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
-    window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
+    // window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
+    window.ADMIN_SOCK = new WebSocket(process.env.NEXT_PUBLIC_WS);
+    console.log("connecting", process.env.NEXT_PUBLIC_WS)
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
@@ -78,6 +80,7 @@ export default function Admin() {
     <main className="flex flex-col gap-4 h-[calc(100vh-56px)] p-24 bg-slate-700">
       <h1 className="text-4xl text-center rounded-lg bg-primary py-3">Admin Page</h1>
       <div className="flex flex-col space-y-4">
+        <p>{process.env.NEXT_PUBLIC_WS}</p>
         {gameState &&
           <div>
             <p>GUID: {gameState.id.toString()}</p>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 export default function Home() {
+  const qrCode = "../../qr-code.png"
   const game = true; // placeholder
   return (
     <main className="flex h-[calc(100vh-56px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
@@ -17,6 +18,7 @@ export default function Home() {
           <h1 className='cursor-pointer hover:bg-red-300 transition-colors duration-500 text-lg rounded-lg p-2 bg-red-400 text-black'>No Active Game</h1>
         </div>
       }
+      <img src={qrCode} className='w-44 h-44' />
       <div className='flex flex-col'>
         {/* USE A TAG HERE INSTEAD OF LINK AND REPLACE SO THAT WE DONT ROUTE BACK TO GAME INDEX */}
         <a href="/connecting" >game</a>
