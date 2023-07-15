@@ -21,7 +21,7 @@ export default function Home() {
       <img src={qrCode} className='w-44 h-44' />
       <div className='flex flex-col'>
         {/* USE A TAG HERE INSTEAD OF LINK AND REPLACE SO THAT WE DONT ROUTE BACK TO GAME INDEX */}
-        <a href="/connecting" >game</a>
+        <a href="/game/connecting" >game</a>
         <Link href="/results">results</Link>
         <Link href="/admin">admin</Link>
       </div>

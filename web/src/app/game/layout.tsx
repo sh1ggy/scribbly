@@ -23,7 +23,7 @@ export default function DashboardLayout({
     console.log({ ping });
   }
   function handleGameState(gameState: IGameState) {
-    console.log("FROM LAYOUT NEW GAME STATE" + { gameState });
+    console.log("FROM LAYOUT NEW GAME STATE", { gameState });
     setGameState(gameState);
   }
   function handleResults(results: IResultsSTG) {
@@ -44,6 +44,14 @@ export default function DashboardLayout({
         handleResults(ResultsSTG.decode(data));
       case ServerMessageType.VoteUpdate:
         setVoteCount(voteCount + 1);
+      case ServerMessageType.Restart:
+        // TODO: Toast
+        router.push("/");
+        return;
+      case ServerMessageType.NoGameState:
+        // TODO: toast
+        router.push('/');
+        return;
     }
   }
 
