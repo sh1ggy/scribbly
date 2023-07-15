@@ -46,8 +46,6 @@ export default function Gamer() {
     const message = async (event: MessageEvent<Blob>) => {
       const { type, data } = await deserialize(event);
       switch (type) {
-        case ServerMessageType.GameState:
-          setGameState(GameState.decode(data))
       }
     }
     window.SCRIBBLE_SOCK.addEventListener('message', message);

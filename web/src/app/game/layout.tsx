@@ -30,10 +30,6 @@ export default function DashboardLayout({
       case ServerMessageType.Ping: 
         handlePing(Ping.decode(data));
         return;
-      case ServerMessageType.GameState:
-        console.log("GAME STATE" + data);
-        handleGameState(GameState.decode(data));
-        return;
 
     }
   }

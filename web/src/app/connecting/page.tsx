@@ -45,7 +45,9 @@ export default async function Game() {
           router.push("/");
           return;
         case ServerMessageType.GameState:
-          setGameState(GameState.decode(data));
+          let gs = GameState.decode(data);
+          console.log({ gs });
+          setGameState(gs);
           return;
         case ServerMessageType.NoGameState:
           setNoGameState(true);

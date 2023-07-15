@@ -7,7 +7,7 @@ use crate::{
     gen_schemas::{
         api::{self, DrawUpdate},
         client,
-        common::{self, Coord},
+        common::{self},
     },
     server::GameState,
 };
@@ -60,6 +60,7 @@ async fn handle_admin_message(
                     let mut game = conn.game_ref.lock().unwrap();
                     let mut drawings = [Vec::new(), Vec::new()];
                     *game = Some(GameState {
+                        prompt: String::from("banana"),
                         // TODO: make guid better lole
                         id: Guid::from_ms_bytes(&[0;16]),
                         stage: api::Stage::GamerSelect,
@@ -94,7 +95,7 @@ async fn handle_game_message(
         }
         client::ClientMessageType::CursorLocation => {
             let cursor = client::CursorLocation::deserialize(data).unwrap();
-            let server_coord = common::Coord {
+            let server_coord = api::Coord {
                 x: cursor.current_point.x,
                 y: cursor.current_point.y,
             };
@@ -126,7 +127,7 @@ async fn handle_game_message(
     }
 }
 
-fn save_coord_to_game_state(coord: Coord, conn: &mut ClientConnection) -> Option<DrawUpdate> {
+fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> Option<DrawUpdate> {
     let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
         return None;
     };

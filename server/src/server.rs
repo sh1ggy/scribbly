@@ -19,7 +19,10 @@ use tokio_tungstenite::{
 
 // Just so we dont have to type out crate::ml every time
 use crate::{
-    gen_schemas::{api, client, common},
+    gen_schemas::{
+        api::{self, Drawing},
+        client, common,
+    },
     ml,
 };
 
@@ -54,7 +57,7 @@ impl Into<api::ClientType> for ClientType {
 impl ClientType {
     pub fn to_dto(self, id: u32) -> api::ClientTypeDTO {
         let mut ctype_dto = api::ClientTypeDTO {
-            ctype: self.into(),
+            ctype: self.clone().into(),
             gamer_id: 0,
             id,
         };
@@ -80,39 +83,44 @@ pub struct GameState {
     stage: api::Stage,
     prompt: String,
 }
+// THE LIFETIME SPECIFIER HERE MAKES SURE THAT SLICE WRAPPER IS ABLE TO KEEP THE REFERENCE TO THE STROKE ARRAYS
+async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
+    let mut msg = Message::Text("Yo".into());
+    if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
+        let mut drawings: Vec<Drawing> = Vec::new();
+        let game_drawings = game.drawings.clone();
+        for drawing in game_drawings.iter() {
+            let mut drawingDto = Drawing {
+                strokes: Vec::new(),
+            };
 
-impl<'a> Into<api::GameState<'a>> for GameState {
-    fn into(self) -> api::GameState<'a> {
-        let drawings = self
-            .drawings
-            .into_iter()
-            .map(|drawing| {
-                api::Drawing {
-                    strokes: drawing.into_iter().map(|stroke| api::Stroke {
-                        locs: stroke
-                            .into_iter()
-                            .map(|coord| api::Coord {
-                                x: coord.x,
-                                y: coord.y,
-                            })
-                            .collect(),
-                    }),
-                }
-                .collect()
-            })
-            .collect();
-        api::GameState {
-            id: self.id,
-            clients: self
-                .clients
-                .into_iter()
-                .map(|(id, ctype)| (id, ctype.into()))
-                .collect(),
-            drawings,
-            stage: self.stage,
-            prompt: &self.prompt.clone(),
+            for stroke in drawing.iter() {
+                let saved = &stroke;
+                drawingDto.strokes.push(SliceWrapper::Cooked(saved));
+            }
+
+            drawings.push(drawingDto);
         }
+
+        let clients = game
+            .clients
+            .clone()
+            .into_iter()
+            .map(|(id, ctype)| (id, ctype.into()))
+            .collect();
+
+        let gamestate_dto = api::GameState {
+            id: game.id,
+            clients,
+            drawings,
+            stage: game.stage,
+            prompt: &game.prompt.clone(),
+        };
+        let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
+        msg = Message::Binary(bin);
     }
+
+    conn.broadcast_message(&msg).await;
 }
 
 #[derive(Debug)]
@@ -244,6 +252,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let ctype_dto = ctype.to_dto(conn.client_id);
 
     // TODO: BEFORE CLIENTTYPE SEND THE GAMESTATE
+    send_gamestate_dto(&mut conn).await;
 
     let buf = get_dto_binary(ctype_dto, api::ServerMessageType::ClientTypeDTO as u32);
     let msg = Message::Binary(buf);
