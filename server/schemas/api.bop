@@ -21,10 +21,10 @@ enum ServerMessageType {
 
   Restart = 28;
   // STAGES
-  AudienceLobbySTG = 29; 
-  DrawingSTG = 30; // timer on client -- timer on client is single source of truth (server authoritative)
-  VotingSTG = 31; 
-  JudgingSTG = 32; 
+  // AudienceLobbySTG = 29; 
+  // DrawingSTG = 30; // timer on client -- timer on client is single source of truth (server authoritative)
+  // VotingSTG = 31; 
+  // JudgingSTG = 32; 
   ResultsSTG = 33;
 }
 
