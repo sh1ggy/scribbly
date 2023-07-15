@@ -58,9 +58,10 @@ export const useDraw = (onDraw: DrawFunc, onCursorUp: CursorUpFunc) => {
     }
 
     const cursorUpHandler = () => {
+      let wasMouseDown = mouseDown;
       setMouseDown(false)
       prevPoint.current = null
-      onCursorUp();
+      if (wasMouseDown) onCursorUp();
     }
 
     const cursorDownHandler = (e: { preventDefault: () => void }) => {

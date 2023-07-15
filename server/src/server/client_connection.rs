@@ -1,11 +1,12 @@
 use std::sync::{Arc, Mutex};
 
+use bebop::SliceWrapper;
 use tokio::sync::mpsc::UnboundedSender;
 use tungstenite::Message;
 
-use crate::gen_schemas::api;
+use crate::gen_schemas::api::{self, Drawing};
 
-use super::{Clients, GameState, InternalMessage};
+use super::{handlers::get_dto_binary, Clients, GameState, InternalMessage};
 
 #[derive(Debug, Clone)]
 pub enum ClientType {
@@ -40,7 +41,6 @@ impl ClientType {
         ctype_dto
     }
 }
-
 
 #[derive(Debug)]
 pub struct ClientConnection {
@@ -93,6 +93,68 @@ impl ClientConnection {
 
             game.clients
                 .insert(self.client_id, self.client_type.clone());
+
+            let total_gamers = game
+                .clients
+                .iter()
+                .filter(|(id, client_type)| match client_type {
+                    ClientType::Gamer(_) => true,
+                    _ => false,
+                })
+                .count();
+
+            if (total_gamers >= 2) {
+                self.internal_comms
+                    .send(InternalMessage::CountDownLobby)
+                    .unwrap();
+            }
         }
     }
+}
+
+// THE LIFETIME SPECIFIER HERE MAKES SURE THAT SLICE WRAPPER IS ABLE TO KEEP THE REFERENCE TO THE STROKE ARRAYS
+pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
+    let e = api::Empty {};
+
+    let mut msg = Message::Binary(get_dto_binary(
+        e,
+        api::ServerMessageType::NoGameState as u32,
+    ));
+
+    if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
+        let mut drawings: Vec<Drawing> = Vec::new();
+        let game_drawings = game.drawings.clone();
+        for drawing in game_drawings.iter() {
+            let mut drawingDto = Drawing {
+                strokes: Vec::new(),
+            };
+
+            for stroke in drawing.iter() {
+                // Idk why we need a ref here
+                let saved = &stroke;
+                drawingDto.strokes.push(SliceWrapper::Cooked(saved));
+            }
+
+            drawings.push(drawingDto);
+        }
+
+        let clients = game
+            .clients
+            .clone()
+            .into_iter()
+            .map(|(id, ctype)| (id, ctype.into()))
+            .collect();
+
+        let gamestate_dto = api::GameState {
+            id: game.id,
+            clients,
+            drawings,
+            stage: game.stage,
+            prompt: &game.prompt.clone(),
+        };
+        let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
+        msg = Message::Binary(bin);
+    }
+
+    conn.broadcast_message(&msg).await;
 }

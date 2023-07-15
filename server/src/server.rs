@@ -26,19 +26,18 @@ use crate::{
         client, common,
     },
     ml,
+    server::client_connection::send_gamestate_dto,
 };
 
 use handlers::{get_dto_binary, handle_client_message};
 
 use bebop::prelude::*;
 
-use self::client_connection::{ClientType, ClientConnection};
+use self::client_connection::{ClientConnection, ClientType};
 
 type Clients = HashMap<u32, UnboundedSender<Message>>;
 
 const MAX_PLAYERS: usize = 50;
-const MAX_BROADCAST_MESSAGES: usize = 100;
-
 
 type Stroke = [Vec<u8>; 2];
 
@@ -54,57 +53,10 @@ pub struct GameState {
     stage: api::Stage,
     prompt: String,
 }
-// THE LIFETIME SPECIFIER HERE MAKES SURE THAT SLICE WRAPPER IS ABLE TO KEEP THE REFERENCE TO THE STROKE ARRAYS
-async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
-    let e = api::Empty {};
-
-    let mut msg = Message::Binary(get_dto_binary(
-        e,
-        api::ServerMessageType::NoGameState as u32,
-    ));
-
-    if let Some(game) = &mut *conn.game_ref.lock().unwrap() {
-        let mut drawings: Vec<Drawing> = Vec::new();
-        let game_drawings = game.drawings.clone();
-        for drawing in game_drawings.iter() {
-            let mut drawingDto = Drawing {
-                strokes: Vec::new(),
-            };
-
-            for stroke in drawing.iter() {
-                // Idk why we need a ref here
-                let saved = &stroke;
-                drawingDto.strokes.push(SliceWrapper::Cooked(saved));
-            }
-
-            drawings.push(drawingDto);
-        }
-
-        let clients = game
-            .clients
-            .clone()
-            .into_iter()
-            .map(|(id, ctype)| (id, ctype.into()))
-            .collect();
-
-        let gamestate_dto = api::GameState {
-            id: game.id,
-            clients,
-            drawings,
-            stage: game.stage,
-            prompt: &game.prompt.clone(),
-        };
-        let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
-        msg = Message::Binary(bin);
-    }
-
-    conn.broadcast_message(&msg).await;
-}
 
 pub enum InternalMessage {
     CountDownLobby,
 }
-
 
 // Need the lifetime specifier for model ref, which also needs to be in a generic because it is a trait
 pub struct Server<'a, T: ml::MLModel> {
@@ -141,16 +93,7 @@ impl<'a, T: ml::MLModel> Server<'a, T> {
         tokio::spawn(async move {
             loop {
                 let msg = internal_rx.recv().await.unwrap();
-
-                // handle_internal_msg(msg, game_ref_clone, cons_ref_clone).await;
                 handle_internal_msg(msg, game_ref.clone(), cons_ref.clone()).await;
-                // send_gamestate_dto(&mut ClientConnection {
-                //     clients_ref: cons_ref.clone(),
-                //     client_type: ClientType::Unknown,
-                //     client_id: 0,
-                //     game_ref: game_ref.clone(),
-                // })
-                // .await;
             }
         });
 
@@ -175,20 +118,81 @@ async fn handle_internal_msg(
 ) {
     match msg {
         InternalMessage::CountDownLobby => {
-            tokio::time::sleep(Duration::from_secs(2)).await;
-            let mut clients = clients_ref.lock().unwrap();
-            broadcast_message(&mut clients, &Message::Ping("Yo".into()));
+            {
+                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                    game.stage = api::Stage::AudienceLobby;
+                }
+                send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
+            }
+
+            tokio::time::sleep(Duration::from_millis(common::AUDIENCE_LOBBY_TIME as u64)).await;
+            {
+                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                    game.stage = api::Stage::Drawing;
+                }
+            }
+            send_gamestate_dto_cring(game_ref, clients_ref).await;
 
             println!("Counting down lobby");
         }
     }
 }
 
-pub async fn broadcast_message(clients: &mut Clients, msg: &Message) {
+pub async fn broadcast_message(clients_ref: Arc<Mutex<Clients>>, msg: &Message) {
+    let clients = clients_ref.lock().unwrap();
     for (_, client) in clients.iter() {
         let msg = msg.clone();
         client.send(msg).unwrap();
     }
+}
+
+async fn send_gamestate_dto_cring<'a>(
+    game_ref: Arc<Mutex<Option<GameState>>>,
+    clients_ref: Arc<Mutex<Clients>>,
+) {
+    let e = api::Empty {};
+
+    let mut msg = Message::Binary(get_dto_binary(
+        e,
+        api::ServerMessageType::NoGameState as u32,
+    ));
+
+    if let Some(game) = &mut *game_ref.lock().unwrap() {
+        let mut drawings: Vec<Drawing> = Vec::new();
+        let game_drawings = game.drawings.clone();
+        for drawing in game_drawings.iter() {
+            let mut drawingDto = Drawing {
+                strokes: Vec::new(),
+            };
+
+            for stroke in drawing.iter() {
+                // Idk why we need a ref here
+                let saved = &stroke;
+                drawingDto.strokes.push(SliceWrapper::Cooked(saved));
+            }
+
+            drawings.push(drawingDto);
+        }
+
+        let clients = game
+            .clients
+            .clone()
+            .into_iter()
+            .map(|(id, ctype)| (id, ctype.into()))
+            .collect();
+
+        let gamestate_dto = api::GameState {
+            id: game.id,
+            clients,
+            drawings,
+            stage: game.stage,
+            prompt: &game.prompt.clone(),
+        };
+        let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
+        msg = Message::Binary(bin);
+    }
+
+    broadcast_message(clients_ref, &msg).await;
 }
 
 async fn accept_connection(stream: TcpStream, conn: ClientConnection) {
