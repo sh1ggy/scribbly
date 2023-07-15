@@ -7,9 +7,8 @@ mod gen_schemas;
 
 #[tokio::main]
 async fn main() {
-      let model = PlaceholderModel::new("".to_string());
     let server_addr = "127.0.0.1:8001";
-    let mut server = Server::new(&model, server_addr);
+    let mut server = Server::new( server_addr);
 
     server.run().await;
 

@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use bebop::SliceWrapper;
 use tokio::sync::mpsc::UnboundedSender;
@@ -145,12 +148,20 @@ pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
             .map(|(id, ctype)| (id, ctype.into()))
             .collect();
 
+        let current_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+
+        let millis_elapsed_since_stage = (current_time - game.last_stage_time) as u64;
+
         let gamestate_dto = api::GameState {
             id: game.id,
             clients,
             drawings,
             stage: game.stage,
-            prompt: &game.prompt.clone(),
+            prompt: &game.prompt.name.clone(),
+            millis_elapsed_since_stage,
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);

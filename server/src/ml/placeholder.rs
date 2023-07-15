@@ -1,9 +1,8 @@
-use super::{models::MLResult, MLModel};
+use super::{models::MLResult};
 use rand::random;
 
 pub struct PlaceholderModel {
     pub model_path: String,
-
 }
 
 impl PlaceholderModel {
@@ -12,7 +11,7 @@ impl PlaceholderModel {
     }
 }
 
-impl MLModel for PlaceholderModel {
+impl PlaceholderModel {
     fn predict(&self, input_file: &std::path::PathBuf) -> MLResult {
         let mut vec = vec![0.0; 3];
         for i in vec.iter_mut() {
