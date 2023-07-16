@@ -206,7 +206,7 @@ class CustomDataset(Dataset):
         self.transform = transform
 
     @staticmethod
-    def _draw(raw_strokes, size=256, lw=6, time_color=True):
+    def _draw(raw_strokes,  size=256, lw=6, time_color=True):
         BASE_SIZE = 256
         img = np.zeros((BASE_SIZE, BASE_SIZE), np.uint8)
         # Here is where the process diverges
@@ -230,13 +230,12 @@ class CustomDataset(Dataset):
             stroke_array[0] -= top_left[0]
             stroke_array[1] -= top_left[1]
             
-            offset_strokes.append(stroke_array.astype(int))
+            offset_strokes.append(stroke_array)
 
 
         all_strokes_xy = np.concatenate(offset_strokes, axis=1)
         # Get the largest value in the strokes
         highest = all_strokes_xy.max()
-
 
         simple_strokes = []
         for stroke in offset_strokes:
@@ -260,14 +259,17 @@ class CustomDataset(Dataset):
         return len(self.doodle)
 
     def __getitem__(self, idx):
-        raw_strokes = self.doodle.drawing[idx]
+        # The ast traversal is important because it is a string being passed in 
+        raw_strokes = ast.literal_eval(self.doodle.drawing[idx])
+        label = self.doodle.key_id[idx].astype(np.int64)
+        votes = self.doodle.votes[idx].astype(np.float32)
         sample = self._draw(raw_strokes, size=self.size, lw=2, time_color=True)
         if self.transform:
             sample = self.transform(sample)
         if self.mode == 'train':
-            return (sample[None]/255).astype('float32'), self.label
+            return (sample[None]/255).astype('float32'), label, votes
         else:
-            return (sample[None]/255).astype('float32')
+            return (sample[None]/255).astype('float32'), label, votes
 
 SIZE = 224 # for matching to imagenet
 

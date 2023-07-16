@@ -190,31 +190,15 @@ async fn finalise_game(game_ref: Arc<Mutex<Option<GameState>>>) {
         guid = game.id.clone();
     }
 
-    save_results_to_csv(
-        &drawings,
-        prompt,
-        &votes,
-        guid
-        
-    )
-    .await;
+    save_results_to_csv(&drawings, prompt, &votes, guid).await;
 }
 
 async fn save_results_to_csv(
     drawings: &[Vec<Vec<api::Coord>>; 2],
     prompt: Prompt,
     votes: &Vec<api::GamerChoice>,
-    game_id: Guid
+    game_id: Guid,
 ) {
-    let mut file = tokio::fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .append(true)
-        .open("./results.csv")
-        .await
-        .unwrap();
-    // Create a `BufWriter` for efficient writing
-    let mut writer = BufWriter::new(file);
     for (gamer_id, drawing) in drawings.iter().enumerate() {
         let mut csv_data: CSVDrawing = Vec::new();
         for stroke in drawing.iter() {
@@ -226,15 +210,29 @@ async fn save_results_to_csv(
             csv_data.push(stroke_def);
         }
 
-        let mut csv_string = serde_json::to_string(&csv_data).unwrap();
-        csv_string.push('\n');
-        // Format the string tobe comma seperated
+        let mut file = tokio::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .append(true)
+            .open("./results.csv")
+            .await
+            .unwrap();
+        // Create a `BufWriter` for efficient writing
+        let mut writer = BufWriter::new(file);
+
+        // let mut csv_string = String::from("\n");
+        // csv_string.push_str(&serde_json::to_string(&csv_data).unwrap());
+        let csv_string = serde_json::to_string(&csv_data).unwrap();
         //Drawing, key, word, game_id, vote
-        let gamer_id = api::GamerChoice::try_from((gamer_id as u32) +1).unwrap();
+        let gamer_id = api::GamerChoice::try_from((gamer_id as u32) + 1).unwrap();
         let sum_count = votes.iter().count();
         let votes_for_gamer = votes.iter().filter(|v| (**v == gamer_id.clone())).count();
-        println!("{:?} got {:?} votes",gamer_id, votes_for_gamer);
-        let votes_ratio = votes_for_gamer as f32 / sum_count as f32;
+        println!("{:?} got {:?} votes", gamer_id, votes_for_gamer);
+        let mut votes_ratio = 0.0;
+        if votes_for_gamer != 0 {
+            votes_ratio = votes_for_gamer as f32 / sum_count as f32;
+        }
+
         println!("Votes ratio: {:?}", votes_ratio);
         // let csv_entry = format!(
         //     "{},{},{},{},{}",
@@ -242,18 +240,19 @@ async fn save_results_to_csv(
         //     prompt.class.clone(),
         //     prompt.name.clone(),
         //     game_id,
-        //     votes_ratio 
+        //     votes_ratio
         // );
 
         let csv_entry = format!(
-            "{},{},{}",
+            "\n\"{}\",{},{}",
             csv_string,
             prompt.class.clone(),
-            votes_ratio 
+            votes_ratio
         );
-
+        println!("CSV entry: {:?}", csv_entry);
 
         writer.write(csv_entry.as_bytes()).await.unwrap();
+        writer.flush().await.unwrap();
     }
 }
 
@@ -264,8 +263,7 @@ pub async fn broadcast_message(clients_ref: Arc<Mutex<Clients>>, msg: &Message) 
         // client.send(msg).unwrap();
         if let Err(e) = client.send(msg) {
             println!("Error sending from client: {:?}", e);
-
-        } 
+        }
     }
 }
 
@@ -362,7 +360,6 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
 
-
     loop {
         // Choses either rx or websocket to recieve, is really just a fancy match for 2 futures
         tokio::select! {
@@ -405,6 +402,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
                     ws_sender.send(rx_msg).await?;
                 }
                 else {
+                    conn.remove_client(conn.client_id).await;
                     ws_sender.close().await?;
                     println!("No message from rx channel, closing connection");
                     break;
