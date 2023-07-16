@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { deserialize } from "@/utils/bopUtils";
 import { useContainerSize } from "@/hooks/useContainerSize";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+// import Confetti from 'react-confetti'
+import { useWindowSize } from "@/hooks/useWindowSize";
 
 export default async function Results() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
@@ -16,6 +18,8 @@ export default async function Results() {
   const canvasRefB = useRef<HTMLCanvasElement>(null); // need to draw this in with game state
   const [results, setResults] = useAtom(resultsAtom);
   const [canvasSize, setCanvasSize] = useState(0);
+  const { width, height } = useWindowSize()
+
 
   function handleDrawResult() {
     if (!gameState || !results) return;
@@ -28,8 +32,8 @@ export default async function Results() {
         stroke.forEach((coord, i) => {
           const prevX = i == 0 ? stroke[i].x : stroke[i - 1].x
           const prevY = i == 0 ? stroke[i].y : stroke[i - 1].y
-          const prevPoint: ICoord = {x: prevX * canvasSize, y: prevY * canvasSize}
-          const currentPoint: ICoord = {x: coord.x * canvasSize, y: coord.y * canvasSize}
+          const prevPoint: ICoord = { x: prevX * canvasSize, y: prevY * canvasSize }
+          const currentPoint: ICoord = { x: coord.x * canvasSize, y: coord.y * canvasSize }
           drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
         })
       })
@@ -41,6 +45,16 @@ export default async function Results() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-40px)] justify-center items-center bg-slate-700">
+      {/* <Confetti
+        width={width}
+        height={height}
+        confettiSource={{
+          w: 10,
+          h: 10,
+          x: width / 2,
+          y: height / 2,
+        }}
+      /> */}
       {results &&
         <div className="flex flex-col items-center justify-center">
           <div className="flex flex-col md:flex-row items-center justify-center">
@@ -67,6 +81,7 @@ export default async function Results() {
               <div className="stat-desc">What had to be drawn</div>
             </div>
           </div>
+          <div className="text-sm text-black">P.S. Thank you for the data...</div>
         </div>
       }
     </div>

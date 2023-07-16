@@ -26,8 +26,8 @@ export default function Game() {
 
   useEffect(() => {
     if (!gameState) return;
+    if (user.ctype == ClientType.Unknown) router.push(`/`); // send user back to home if unknown?
     if (gameState.stage == Stage.Drawing) {
-      if (user.ctype == ClientType.Unknown) router.push(`/`); // send user back to home if unknown?
       if (user.ctype == ClientType.Audience) router.push(`/game/audience`)
       if (user.ctype == ClientType.Gamer) router.push(`/game/gamer`)
     }

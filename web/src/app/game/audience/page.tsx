@@ -154,7 +154,7 @@ export default function Audience() {
               ref={canvasRefA}
               height={CANVAS_SIZE}
               width={CANVAS_SIZE}
-              className='bg-white border-8 rounded-lg border-secondary border-solid'
+              className='lg:scale-100 bg-white border-8 rounded-lg border-secondary border-solid'
             />
             {voting &&
               <button
@@ -162,7 +162,7 @@ export default function Audience() {
                   e.preventDefault();
                   handleSendVote(GamerChoice.GamerA);
                 }}
-                className="btn border-none text-xs md:text-md">Vote</button>
+                className="scale-75 lg:scale-100 btn border-none text-xs md:text-md">Vote</button>
             }
           </div>
           <div className="flex flex-col">
@@ -170,7 +170,7 @@ export default function Audience() {
               ref={canvasRefB}
               height={CANVAS_SIZE}
               width={CANVAS_SIZE}
-              className='bg-white duration-200 border-8 rounded-lg border-red-400 border-solid'
+              className='lg:scale-100 bg-white duration-200 border-8 rounded-lg border-red-400 border-solid'
             />
             {voting &&
               <button
@@ -178,7 +178,7 @@ export default function Audience() {
                   e.preventDefault();
                   handleSendVote(GamerChoice.GamerB);
                 }}
-                className="btn border-none text-xs md:text-md">Vote</button>
+                className="scale-75 lg:scale-100 btn border-none text-xs md:text-md">Vote</button>
             }
           </div>
         </div>
