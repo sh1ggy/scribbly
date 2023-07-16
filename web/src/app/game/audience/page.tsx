@@ -69,7 +69,6 @@ export default function Audience() {
   }
 
   function handleGameState() {
-    const canvasSize = horizontal ? 400 : 300;
     if (!gameState) return;
     gameState.drawings.forEach((drawing, i) => {
       let canvas = i == 0 ? canvasRefA.current : canvasRefB.current
@@ -81,8 +80,8 @@ export default function Audience() {
         stroke.forEach((coord, i) => {
           const prevX = i == 0 ? stroke[i].x : stroke[i - 1].x
           const prevY = i == 0 ? stroke[i].y : stroke[i - 1].y
-          const prevPoint: ICoord = { x: prevX * canvasSize, y: prevY * canvasSize }
-          const currentPoint: ICoord = { x: coord.x * canvasSize, y: coord.y * canvasSize }
+          const prevPoint: ICoord = { x: prevX * CANVAS_SIZE, y: prevY * CANVAS_SIZE }
+          const currentPoint: ICoord = { x: coord.x * CANVAS_SIZE, y: coord.y * CANVAS_SIZE }
           drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
         })
       })

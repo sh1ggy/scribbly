@@ -30,14 +30,14 @@ export default function Home() {
         </div>
       } */}
       {/* {user.ctype == ClientType.Admin && */}
-      { qrCode &&
+      {qrCode &&
         <QRCode value={qrCode} className='w-44 h-44' />
       }
       {/* } */}
       <div className='flex flex-col'>
         {/* USE A TAG HERE INSTEAD OF LINK AND REPLACE SO THAT WE DONT ROUTE BACK TO GAME INDEX */}
         <a className="text-xl p-2 text-center bg-primary rounded-lg" href="/game/connecting" >Proceed to game!</a>
-        <Link href="/results">results</Link>
+        {/* <Link href="/results">results</Link> */}
         <Link href="/admin">admin</Link>
       </div>
     </main>

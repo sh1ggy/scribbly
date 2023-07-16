@@ -259,7 +259,7 @@ export interface IGameState extends BebopRecord {
   stageFinishTime: bigint;
   clients: Map<number, ClientType>;
   drawings: Array<IDrawing>;
-  prompt: string;
+  prompt: IPrompt;
 }
 
 export class GameState implements IGameState {
@@ -268,7 +268,7 @@ export class GameState implements IGameState {
   public stageFinishTime: bigint;
   public clients: Map<number, ClientType>;
   public drawings: Array<IDrawing>;
-  public prompt: string;
+  public prompt: IPrompt;
 
   constructor(record: IGameState) {
     this.id = record.id;
@@ -309,13 +309,14 @@ export class GameState implements IGameState {
     BebopTypeGuard.ensureUint64(record.stageFinishTime)
     BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
     BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
-    BebopTypeGuard.ensureString(record.prompt)
+    Prompt.validateCompatibility(record.prompt);
   }
 
   /**
    * Unsafely creates an instance of {@link GameState} from the specified dynamic object. No type checking is performed.
    */
   public static unsafeCast(record: any): IGameState {
+      record.prompt = Prompt.unsafeCast(record.prompt);
       return new GameState(record);
   }
 
@@ -358,7 +359,7 @@ export class GameState implements IGameState {
         Drawing.encodeInto(record.drawings[i0], view)
       }
     }
-    view.writeString(record.prompt);
+    Prompt.encodeInto(record.prompt, view)
     const after = view.length;
     return after - before;
   }
@@ -398,8 +399,8 @@ export class GameState implements IGameState {
         field4[i0] = x0;
       }
     }
-    let field5: string;
-    field5 = view.readString();
+    let field5: IPrompt;
+    field5 = Prompt.readFrom(view);
     let message: IGameState = {
       id: field0,
       stage: field1,
@@ -596,25 +597,28 @@ export class NewSTG implements INewSTG {
 
 export interface IResultsSTG extends BebopRecord {
   id: Guid;
-  outcome: GamerChoice;
   votes: Array<GamerChoice>;
+  gamerAKVals: Array<number>;
+  gamerBKVals: Array<number>;
   drawings: Array<IDrawing>;
   clients: Map<number, ClientType>;
-  prompt: string;
+  prompt: IPrompt;
 }
 
 export class ResultsSTG implements IResultsSTG {
   public id: Guid;
-  public outcome: GamerChoice;
   public votes: Array<GamerChoice>;
+  public gamerAKVals: Array<number>;
+  public gamerBKVals: Array<number>;
   public drawings: Array<IDrawing>;
   public clients: Map<number, ClientType>;
-  public prompt: string;
+  public prompt: IPrompt;
 
   constructor(record: IResultsSTG) {
     this.id = record.id;
-    this.outcome = record.outcome;
     this.votes = record.votes;
+    this.gamerAKVals = record.gamerAKVals;
+    this.gamerBKVals = record.gamerBKVals;
     this.drawings = record.drawings;
     this.clients = record.clients;
     this.prompt = record.prompt;
@@ -646,17 +650,19 @@ export class ResultsSTG implements IResultsSTG {
    */
   public static validateCompatibility(record: IResultsSTG): void {
     BebopTypeGuard.ensureGuid(record.id)
-    BebopTypeGuard.ensureEnum(record.outcome, GamerChoice);
     BebopTypeGuard.ensureArray(record.votes, (value) => BebopTypeGuard.ensureEnum(value, GamerChoice));
+    BebopTypeGuard.ensureArray(record.gamerAKVals, BebopTypeGuard.ensureUint32);
+    BebopTypeGuard.ensureArray(record.gamerBKVals, BebopTypeGuard.ensureUint32);
     BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
     BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
-    BebopTypeGuard.ensureString(record.prompt)
+    Prompt.validateCompatibility(record.prompt);
   }
 
   /**
    * Unsafely creates an instance of {@link ResultsSTG} from the specified dynamic object. No type checking is performed.
    */
   public static unsafeCast(record: any): IResultsSTG {
+      record.prompt = Prompt.unsafeCast(record.prompt);
       return new ResultsSTG(record);
   }
 
@@ -685,12 +691,25 @@ export class ResultsSTG implements IResultsSTG {
   public static encodeInto(record: IResultsSTG, view: BebopView): number {
     const before = view.length;
     view.writeGuid(record.id);
-    view.writeUint32(record.outcome);
     {
       const length0 = record.votes.length;
       view.writeUint32(length0);
       for (let i0 = 0; i0 < length0; i0++) {
         view.writeUint32(record.votes[i0]);
+      }
+    }
+    {
+      const length0 = record.gamerAKVals.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        view.writeUint32(record.gamerAKVals[i0]);
+      }
+    }
+    {
+      const length0 = record.gamerBKVals.length;
+      view.writeUint32(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        view.writeUint32(record.gamerBKVals[i0]);
       }
     }
     {
@@ -705,7 +724,7 @@ export class ResultsSTG implements IResultsSTG {
       view.writeUint32(k0);
       view.writeUint32(v0);
     }
-    view.writeString(record.prompt);
+    Prompt.encodeInto(record.prompt, view)
     const after = view.length;
     return after - before;
   }
@@ -719,51 +738,169 @@ export class ResultsSTG implements IResultsSTG {
   public static readFrom(view: BebopView): IResultsSTG {
     let field0: Guid;
     field0 = view.readGuid();
-    let field1: GamerChoice;
-    field1 = view.readUint32() as GamerChoice;
-    let field2: Array<GamerChoice>;
+    let field1: Array<GamerChoice>;
     {
       let length0 = view.readUint32();
-      field2 = new Array<GamerChoice>(length0);
+      field1 = new Array<GamerChoice>(length0);
       for (let i0 = 0; i0 < length0; i0++) {
         let x0: GamerChoice;
         x0 = view.readUint32() as GamerChoice;
+        field1[i0] = x0;
+      }
+    }
+    let field2: Array<number>;
+    {
+      let length0 = view.readUint32();
+      field2 = new Array<number>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: number;
+        x0 = view.readUint32();
         field2[i0] = x0;
       }
     }
-    let field3: Array<IDrawing>;
+    let field3: Array<number>;
     {
       let length0 = view.readUint32();
-      field3 = new Array<IDrawing>(length0);
+      field3 = new Array<number>(length0);
       for (let i0 = 0; i0 < length0; i0++) {
-        let x0: IDrawing;
-        x0 = Drawing.readFrom(view);
+        let x0: number;
+        x0 = view.readUint32();
         field3[i0] = x0;
       }
     }
-    let field4: Map<number, ClientType>;
+    let field4: Array<IDrawing>;
     {
       let length0 = view.readUint32();
-      field4 = new Map<number, ClientType>();
+      field4 = new Array<IDrawing>(length0);
+      for (let i0 = 0; i0 < length0; i0++) {
+        let x0: IDrawing;
+        x0 = Drawing.readFrom(view);
+        field4[i0] = x0;
+      }
+    }
+    let field5: Map<number, ClientType>;
+    {
+      let length0 = view.readUint32();
+      field5 = new Map<number, ClientType>();
       for (let i0 = 0; i0 < length0; i0++) {
         let k0: number;
         let v0: ClientType;
         k0 = view.readUint32();
         v0 = view.readUint32() as ClientType;
-        field4.set(k0, v0);
+        field5.set(k0, v0);
       }
     }
-    let field5: string;
-    field5 = view.readString();
+    let field6: IPrompt;
+    field6 = Prompt.readFrom(view);
     let message: IResultsSTG = {
       id: field0,
-      outcome: field1,
-      votes: field2,
-      drawings: field3,
-      clients: field4,
-      prompt: field5,
+      votes: field1,
+      gamerAKVals: field2,
+      gamerBKVals: field3,
+      drawings: field4,
+      clients: field5,
+      prompt: field6,
     };
     return new ResultsSTG(message);
+  }
+}
+
+export interface IPrompt extends BebopRecord {
+  name: string;
+  class: number;
+}
+
+export class Prompt implements IPrompt {
+  public name: string;
+  public class: number;
+
+  constructor(record: IPrompt) {
+    this.name = record.name;
+    this.class = record.class;
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return Prompt.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IPrompt): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    Prompt.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link Prompt}.
+   */
+  public static validateCompatibility(record: IPrompt): void {
+    BebopTypeGuard.ensureString(record.name)
+    BebopTypeGuard.ensureUint32(record.class)
+  }
+
+  /**
+   * Unsafely creates an instance of {@link Prompt} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IPrompt {
+      return new Prompt(record);
+  }
+
+  /**
+   * Creates a new {@link Prompt} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IPrompt {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`Prompt.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    Prompt.validateCompatibility(parsed);
+    return Prompt.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return Prompt.encode(this);
+  }
+
+  public static encode(record: IPrompt): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    Prompt.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IPrompt, view: BebopView): number {
+    const before = view.length;
+    view.writeString(record.name);
+    view.writeUint32(record.class);
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IPrompt {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return Prompt.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IPrompt {
+    let field0: string;
+    field0 = view.readString();
+    let field1: number;
+    field1 = view.readUint32();
+    let message: IPrompt = {
+      name: field0,
+      class: field1,
+    };
+    return new Prompt(message);
   }
 }
 
