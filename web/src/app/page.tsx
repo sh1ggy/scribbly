@@ -3,10 +3,16 @@ import { ClientType } from '@/lib/schemas';
 import { userStateAtom } from '@/lib/store';
 import { useAtom } from 'jotai';
 import Link from 'next/link'
+import { useEffect, useState } from 'react';
 import QRCode from "react-qr-code";
 
 export default function Home() {
   const [user, setUser] = useAtom(userStateAtom);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== null) setQrCode(window.location.origin);
+  }, [])
   return (
     <main className="flex h-[calc(100vh-56px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
       {/* {game &&
@@ -23,7 +29,9 @@ export default function Home() {
         </div>
       } */}
       {/* {user.ctype == ClientType.Admin && */}
-        <QRCode value={window && `${window.location.origin}/game/connection`} className='w-44 h-44' />
+      { qrCode &&
+        <QRCode value={qrCode} className='w-44 h-44' />
+      }
       {/* } */}
       <div className='flex flex-col'>
         {/* USE A TAG HERE INSTEAD OF LINK AND REPLACE SO THAT WE DONT ROUTE BACK TO GAME INDEX */}
