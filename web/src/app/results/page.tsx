@@ -1,6 +1,6 @@
 'use client'
-import { ClientType, GameState, ICoord, IGameState, ServerMessageType } from "@/lib/schemas";
-import { gameStateAtom, resultsAtom } from "@/lib/store";
+import { ClientType, GameState, GamerChoice, ICoord, IGameState, ServerMessageType } from "@/lib/schemas";
+import { finalState, gameStateAtom, resultsAtom } from "@/lib/store";
 import { drawLine } from "@/utils/drawLine";
 import { useAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
@@ -16,6 +16,7 @@ export default function Results() {
   const matchesMd = useMediaQuery("(min-width: 768px)");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [results, setResults] = useAtom(resultsAtom);
+  const [final, setFinal] = useAtom(finalState);
   const [canvasSize, setCanvasSize] = useState(0);
   const { width, height } = useWindowSize()
   const [winner, setWinner] = useState(0);
@@ -23,7 +24,7 @@ export default function Results() {
 
   function handleDrawResult() {
     if (!gameState || !results) return;
-    gameState.drawings.forEach((drawing, i) => {
+    final?.newGameState.drawings.forEach((drawing, i) => {
       let canvas = i == winner && canvasRef.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -65,12 +66,12 @@ export default function Results() {
           y: height / 2,
         }}
       /> */}
-      {results && gameState &&
+      {results &&
         <div className="flex flex-col items-center justify-center">
           <div className="flex flex-col md:flex-row items-center justify-center">
             <div className="flex flex-col w-full h-full">
               <p className="text-xl p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>WINNER</strong></p>
-              <p className="text-md p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>{winner}</strong></p>
+              <p className="text-md p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>{GamerChoice[winner]}</strong></p>
               <canvas
                 ref={canvasRef}
                 height={canvasSize}
@@ -82,12 +83,12 @@ export default function Results() {
           <div className="stats lg:stats-horizontal shadow bg-slate-800">
             <div className="stat">
               <div className="stat-title">Audience</div>
-              <div className="stat-value">{`${results.votes} / ${audience}`}</div>
+              <div className="stat-value">{`${final?.result.votes} / ${audience}`}</div>
               <div className="stat-desc">/ of people that voted</div>
             </div>
             <div className="stat">
               <div className="stat-title">Prompt</div>
-              <div className="stat-value">{gameState.prompt.name}</div>
+              <div className="stat-value">{final?.newGameState?.prompt.name}</div>
               <div className="stat-desc">What had to be drawn</div>
             </div>
           </div>

@@ -4,10 +4,14 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { ClientType, ClientTypeDTO, GameState, GamerChoice, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
-import { gameStateAtom, resultsAtom, userStateAtom, winnerAtom } from "@/lib/store";
+import { finalState, gameStateAtom, resultsAtom, userStateAtom, winnerAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 import { useTimer } from "react-timer-hook";
 
+export interface ResultsSum {
+  result: IResultsSTG,
+  newGameState: IGameState
+}
 export default function DashboardLayout({
   children, // will be a page or nested layout
 }: {
@@ -19,8 +23,8 @@ export default function DashboardLayout({
   const [user, setUser] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
   const [winner, setWinner] = useAtom(winnerAtom);
+  const [finalResult, setFinalResult] = useAtom(finalState);
   const [voteCount, setVoteCount] = useState(0);
-
 
   const {
     seconds,
@@ -37,8 +41,8 @@ export default function DashboardLayout({
 
   }
   function handleResults(resultsSTG: IResultsSTG) {
+    // if (!gameState) return;
     console.log({ resultsSTG })
-    if (!gameState) return;
 
     let voteCountA = 0;
     let voteCountB = 0;
@@ -47,12 +51,12 @@ export default function DashboardLayout({
     let scoreB = 0;
 
     resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
-      if (gamerAK == gameState.prompt.class) {
+      if (gamerAK == gameState?.prompt.class) {
         scoreA = scoreA + 30;
       }
     })
     resultsSTG.gamerBKVals.forEach((gamerBK, i) => {
-      if (gamerBK == gameState.prompt.class) {
+      if (gamerBK == gameState?.prompt.class) {
         scoreA = scoreB + 30;
       }
     })
@@ -72,9 +76,17 @@ export default function DashboardLayout({
     else {
       setWinner(GamerChoice.GamerB)
     }
+    console.log({winner})
+    const sum: ResultsSum  = {
+      newGameState: gameState!,
+      result: resultsSTG,
 
-
+    }
+    setGameState(gameState);
     setResults(resultsSTG);
+    setFinalResult(sum);
+
+    console.log({results})
     router.push('/results');
   }
 
@@ -138,9 +150,8 @@ export default function DashboardLayout({
       window.SCRIBBLE_SOCK.removeEventListener('open', openConnection);
       window.SCRIBBLE_SOCK.removeEventListener('message', message);
       window.SCRIBBLE_SOCK.removeEventListener('error', error);
-      setGameState(null);
+      // setGameState(null);
       window.SCRIBBLE_SOCK.close();
-      router.push('/');
     }
   }, [])
 

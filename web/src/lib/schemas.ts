@@ -1451,11 +1451,11 @@ export class FinishStroke implements IFinishStroke {
 
 export const AUDIENCE_LOBBY_TIME: number = 10000;
 
-export const DRAWING_TIME: number = 30000;
+export const DRAWING_TIME: number = 10000;
 
 export const RESULTS_DRUMROLL: number = 5000;
 
-export const VOTING_TIME: number = 15000;
+export const VOTING_TIME: number = 1000;
 
 export interface ICoord extends BebopRecord {
   x: number;
