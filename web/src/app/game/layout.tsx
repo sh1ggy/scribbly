@@ -1,11 +1,12 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { ClientType, ClientTypeDTO, GameState, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
 import { gameStateAtom, resultsAtom, userStateAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
+import { useTimer } from "react-timer-hook";
 
 export default function DashboardLayout({
   children, // will be a page or nested layout
@@ -19,12 +20,20 @@ export default function DashboardLayout({
   const [results, setResults] = useAtom(resultsAtom);
   const [voteCount, setVoteCount] = useState(0);
 
+
+  const {
+    seconds,
+    restart,
+  } = useTimer({ expiryTimestamp: new Date(), onExpire: () => console.warn('onExpire called') });
+
   function handlePing(ping: IPing) {
     console.log({ ping });
   }
   function handleGameState(gameState: IGameState) {
     console.log("FROM LAYOUT NEW GAME STATE", { gameState });
     setGameState(gameState);
+    restart(new Date(Number(gameState.stageFinishTime)));
+
   }
   function handleResults(results: IResultsSTG) {
     setResults(results);
@@ -56,6 +65,18 @@ export default function DashboardLayout({
         return;
     }
   }
+
+  const timerShown = useMemo(() => {
+    switch (gameState?.stage) {
+      case Stage.Drawing:
+        return true;
+      case Stage.Voting:
+        return true;
+      case Stage.AudienceLobby:
+      default:
+        return false;
+    }
+  }, [gameState?.stage]);
 
   const error = (event: Event) => {
     console.error('WebSocket error:', error);
@@ -108,6 +129,13 @@ export default function DashboardLayout({
             </ul>
           }
           <p className="space-x-3 text-sm pb-2 bg-black rounded-lg text-center">
+            {
+              timerShown &&
+              <>
+                <p className="text-4xl p-2 rounded-t-lg bg-black w-full text-center">{seconds}</p>
+                <code>{seconds} Seconds left in Stgae</code>
+              </>
+            }
             <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
             <code className="text-secondary rounded-lg p-1">{gameState && gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size} votes`}</code>
           </p>

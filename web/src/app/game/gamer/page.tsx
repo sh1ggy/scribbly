@@ -29,11 +29,6 @@ export default function Gamer() {
 
   const router = useRouter();
 
-  // Countdown timer
-  // TODO: invoke event to submit drawing on timeout
-  const TIMER_DELAY = 1000;
-  const [drawTimer, setDrawTimer] = useState(DRAWING_TIME/1000);
-
   function cursorUp() {
     if (!gameState || gameState.stage != Stage.Drawing) return
     if (gameState.stage = Stage.Drawing) {
@@ -78,13 +73,9 @@ export default function Gamer() {
     if (gameState?.stage == Stage.Voting) setJudgement(true);
     else if (!gameState || gameState.stage != Stage.Drawing) return;
     console.log(gameState);
-    setDrawTimer(DRAWING_TIME - Number(gameState.millisElapsedSinceStage)/1000)
   }, [gameState])
 
-  useEffect(() => {
-    if (!drawTimer) return;
-    drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
-  }, [drawTimer])
+
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link
     <div ref={canvasContainerRef} className='
@@ -101,7 +92,6 @@ export default function Gamer() {
       <div>
         {gameState?.stage == Stage.Drawing &&
           <>
-            <p className="text-4xl p-2 rounded-t-lg bg-black w-full text-center">{drawTimer}</p>
             {/* The line becomes offset and incorrect when the page is able to scroll */}
             <canvas
               ref={canvasRef}

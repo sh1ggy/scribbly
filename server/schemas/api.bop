@@ -37,7 +37,7 @@ struct DrawUpdate {
 struct GameState {
   guid id;
   Stage stage;
-  uint64 millisElapsedSinceStage;
+  uint64 stage_finish_time;
   map[uint32, ClientType] clients;
   Drawing[] drawings;
   string prompt;
