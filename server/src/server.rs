@@ -1,6 +1,8 @@
 mod client_connection;
 mod handlers;
 
+use serde::{Deserialize, Serialize};
+
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -12,6 +14,7 @@ use std::{
 use tokio::{
     io::{AsyncWriteExt, BufWriter},
     net::{TcpListener, TcpStream},
+    process::Command,
     sync::mpsc::{unbounded_channel, UnboundedSender},
 };
 
@@ -118,7 +121,11 @@ impl<'a> Server<'a> {
     }
 }
 
-async fn handle_internal_msg(
+// #[derive(Deserialize)]
+pub type kVals = [Vec<u32>; 2];
+
+use std::str;
+async fn handle_internal_msg<'a>(
     msg: InternalMessage,
     game_ref: Arc<Mutex<Option<GameState>>>,
     clients_ref: Arc<Mutex<Clients>>,
@@ -170,6 +177,55 @@ async fn handle_internal_msg(
             send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
 
             finalise_game(game_ref.clone()).await;
+
+            let output = Command::new("C:/Users/anhad/miniconda3/envs/ml/python.exe ")
+                .args(&["d:/scribbly/server/scribbly.py"])
+                .output()
+                .await
+                .unwrap(); //Handle error here
+
+            let output = str::from_utf8(&output.stdout).unwrap();
+
+            let data: [Vec<f32>; 2] = serde_json::from_str(output).unwrap();
+
+            let gamerA = data[0]
+                .iter()
+                .map(|x| x.round() as u32)
+                .collect::<Vec<u32>>();
+            let gamerB = data[1]
+                .iter()
+                .map(|x| x.round() as u32)
+                .collect::<Vec<u32>>();
+
+            let mut msg = Message::Binary(get_dto_binary(
+                common::Empty {},
+                api::ServerMessageType::NoGameState as u32,
+            ));
+            {
+                if let Some(game) = &mut *game_ref.lock().unwrap() {
+
+                let votes_clone = (&game.votes.clone());
+                    let result = api::ResultsSTG {
+                        id: game.id,
+                        votes: SliceWrapper::Cooked(&votes_clone),
+                        gamer_akvals: SliceWrapper::Cooked(&gamerA),
+                        gamer_bkvals: SliceWrapper::Cooked(&gamerB),
+                    };
+                    let data = get_dto_binary(result, api::ServerMessageType::ResultsSTG as u32);
+                    msg = Message::Binary(data);
+                }
+            }
+            broadcast_message(clients_ref, &msg);
+
+            // println!("{:?}", data);
+
+            // println!(
+            //     "status: {}, {}",
+            //     output.status,
+            //     str::from_utf8(&output.stdout).unwrap()
+            // );
+
+            // %windir%\System32\cmd.exe "/K" C:\Users\anhad\miniconda3\Scripts\activate.bat C:\Users\anhad\miniconda3
         }
     }
 }
