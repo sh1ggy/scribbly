@@ -57,11 +57,6 @@ struct ResultsSTG { // keep in global state
   uint32[] gamerAKVals;
   uint32[] gamerBKVals;
 
-  Drawing[] drawings;
-  map[uint32, ClientType] clients;
-
-  Prompt prompt;
-
 }
 
 struct Prompt
