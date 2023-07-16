@@ -185,6 +185,7 @@ async fn handle_internal_msg<'a>(
                 .unwrap(); //Handle error here
 
             let output = str::from_utf8(&output.stdout).unwrap();
+            println!("Got Ml Result: {}", output);
 
             let data: [Vec<f32>; 2] = serde_json::from_str(output).unwrap();
 
@@ -215,7 +216,7 @@ async fn handle_internal_msg<'a>(
                     msg = Message::Binary(data);
                 }
             }
-            broadcast_message(clients_ref, &msg);
+            broadcast_message(clients_ref, &msg).await;
 
             // println!("{:?}", data);
 
