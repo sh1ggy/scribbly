@@ -67,6 +67,7 @@ export default async function Results() {
               <div className="stat-desc">What had to be drawn</div>
             </div>
           </div>
+          <div className="text-sm text-black">P.S. Thank you for the data...</div>
         </div>
       }
     </div>

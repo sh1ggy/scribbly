@@ -73,6 +73,7 @@ export default function DashboardLayout({
       case Stage.Voting:
         return true;
       case Stage.AudienceLobby:
+        return true;
       default:
         return false;
     }
@@ -105,6 +106,19 @@ export default function DashboardLayout({
     }
   }, [])
 
+  useEffect(() => {
+    if (!gameState) return;
+    let clientArray = Array.from(gameState?.clients)
+    let audienceCount = 0;
+    clientArray.filter((client) => {
+      if (client[1] == ClientType.Audience) {
+        audienceCount++;
+      }
+    })
+    console.log("AUDIENCE COUNT !!!", audienceCount);
+    setAudience(audienceCount); // minus two for gamers
+  }, [gameState])
+
   return (
     <section className="flex flex-col item-center lg:justify-center">
       {gameState &&
@@ -124,7 +138,7 @@ export default function DashboardLayout({
             <ul className="steps m-3 overflow-clip">
               <div className="flex justify-center items-center space-x-4">
                 <p className="p-2 bg-secondary text-black rounded-lg">Phase</p>
-                <code className="p-1 rounded-md bg-primary">{gameState && Stage[gameState?.stage]}</code>
+                <code className="p-1 rounded-md bg-primary">{gameState && Stage[gameState.stage]}</code>
               </div>
             </ul>
           }
@@ -132,12 +146,11 @@ export default function DashboardLayout({
             {
               timerShown &&
               <>
-                <p className="text-4xl p-2 rounded-t-lg bg-black w-full text-center">{seconds}</p>
-                <code>{seconds} Seconds left in Stgae</code>
+                <code>{seconds}s left in {gameState && Stage[gameState.stage]}</code>
               </>
             }
             <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
-            <code className="text-secondary rounded-lg p-1">{gameState && gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size} votes`}</code>
+            <code className="text-secondary rounded-lg p-1">{gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size - 2} votes`}</code>
           </p>
         </div>
       }
