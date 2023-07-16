@@ -36,8 +36,8 @@ export default function DashboardLayout({
     restart(new Date(Number(gameState.stageFinishTime)));
 
   }
-  function handleResults(results: IResultsSTG) {
-    console.log({results})
+  function handleResults(resultsSTG: IResultsSTG) {
+    console.log({ resultsSTG })
     if (!gameState) return;
 
     let voteCountA = 0;
@@ -46,24 +46,35 @@ export default function DashboardLayout({
     let scoreA = 0;
     let scoreB = 0;
 
-    results.gamerAKVals.forEach((gamerAK, i) => {
+    resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
       if (gamerAK == gameState.prompt.class) {
         scoreA = scoreA + 30;
       }
     })
-    results.gamerBKVals.forEach((gamerBK, i) => {
+    resultsSTG.gamerBKVals.forEach((gamerBK, i) => {
       if (gamerBK == gameState.prompt.class) {
         scoreA = scoreB + 30;
       }
     })
-    results.votes.forEach((vote, i) => {
+    resultsSTG.votes.forEach((vote, i) => {
       if (vote == GamerChoice.GamerA) voteCountA++;
       if (vote == GamerChoice.GamerB) voteCountB++;
     })
-    voteCountA > voteCountB ? scoreA = scoreA + 50 : scoreB = scoreB + 50;
-    scoreA > scoreB ? setWinner(GamerChoice.GamerA) : setWinner(GamerChoice.GamerB);
+    if (voteCountA > voteCountB) {
+      scoreA = scoreA + 50
+    }
+    else {
+      scoreB = scoreB + 50
+    }
+    if (scoreA > scoreB) {
+      setWinner(GamerChoice.GamerA)
+    }
+    else {
+      setWinner(GamerChoice.GamerB)
+    }
 
-    setResults(results);
+
+    setResults(resultsSTG);
     router.push('/results');
   }
 

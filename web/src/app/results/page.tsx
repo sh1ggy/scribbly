@@ -10,7 +10,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 // import Confetti from 'react-confetti'
 import { useWindowSize } from "@/hooks/useWindowSize";
 
-export default async function Results() {
+export default function Results() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const color = '#000'
   const matchesMd = useMediaQuery("(min-width: 768px)");
