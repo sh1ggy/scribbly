@@ -1,7 +1,7 @@
 'use client'
 
 import { atom } from 'jotai'
-import { ClientType, Drawing, IClientTypeDTO, IGameState, IResultsSTG, Stage } from './schemas';
+import { ClientType, Drawing, GamerChoice, IClientTypeDTO, IGameState, IResultsSTG, Stage } from './schemas';
 
 const initUser: IClientTypeDTO = {
     id: 0,
@@ -14,3 +14,5 @@ export const userStateAtom = atom(initUser);
 export const gameStateAtom = atom<null | IGameState>(null);
 
 export const resultsAtom = atom<null | IResultsSTG>(null);
+
+export const winnerAtom = atom<null | GamerChoice>(null);

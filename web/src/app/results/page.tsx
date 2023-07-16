@@ -1,5 +1,5 @@
 'use client'
-import { GameState, ICoord, IGameState, ServerMessageType } from "@/lib/schemas";
+import { ClientType, GameState, ICoord, IGameState, ServerMessageType } from "@/lib/schemas";
 import { gameStateAtom, resultsAtom } from "@/lib/store";
 import { drawLine } from "@/utils/drawLine";
 import { useAtom } from "jotai";
@@ -15,16 +15,16 @@ export default async function Results() {
   const color = '#000'
   const matchesMd = useMediaQuery("(min-width: 768px)");
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasRefB = useRef<HTMLCanvasElement>(null); // need to draw this in with game state
   const [results, setResults] = useAtom(resultsAtom);
   const [canvasSize, setCanvasSize] = useState(0);
   const { width, height } = useWindowSize()
-
+  const [winner, setWinner] = useState(0);
+  const [audience, setAudience] = useState(0);
 
   function handleDrawResult() {
     if (!gameState || !results) return;
     gameState.drawings.forEach((drawing, i) => {
-      let canvas = i == results.outcome && canvasRef.current
+      let canvas = i == winner && canvasRef.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -40,6 +40,16 @@ export default async function Results() {
     })
   }
   useEffect(() => {
+    if (!gameState) return;
+    let clientArray = Array.from(gameState.clients)
+    let audienceCount = 0;
+    clientArray.filter((client) => {
+      if (client[1] == ClientType.Audience) {
+        audienceCount++;
+      }
+    })
+    console.log("AUDIENCE COUNT !!!", audienceCount);
+    setAudience(audienceCount); // minus two for gamers
     handleDrawResult();
   }, [])
 
@@ -55,12 +65,12 @@ export default async function Results() {
           y: height / 2,
         }}
       /> */}
-      {results &&
+      {results && gameState &&
         <div className="flex flex-col items-center justify-center">
           <div className="flex flex-col md:flex-row items-center justify-center">
             <div className="flex flex-col w-full h-full">
               <p className="text-xl p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>WINNER</strong></p>
-              <p className="text-md p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>{results.outcome}</strong></p>
+              <p className="text-md p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>{winner}</strong></p>
               <canvas
                 ref={canvasRef}
                 height={canvasSize}
@@ -72,12 +82,12 @@ export default async function Results() {
           <div className="stats lg:stats-horizontal shadow bg-slate-800">
             <div className="stat">
               <div className="stat-title">Audience</div>
-              <div className="stat-value">{`${results.votes} / ${results.clients.size}`}</div>
+              <div className="stat-value">{`${results.votes} / ${audience}`}</div>
               <div className="stat-desc">/ of people that voted</div>
             </div>
             <div className="stat">
               <div className="stat-title">Prompt</div>
-              <div className="stat-value">{results.prompt}</div>
+              <div className="stat-value">{gameState.prompt.name}</div>
               <div className="stat-desc">What had to be drawn</div>
             </div>
           </div>

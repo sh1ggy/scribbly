@@ -3,8 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { ClientType, ClientTypeDTO, GameState, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
-import { gameStateAtom, resultsAtom, userStateAtom } from "@/lib/store";
+import { ClientType, ClientTypeDTO, GameState, GamerChoice, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
+import { gameStateAtom, resultsAtom, userStateAtom, winnerAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 import { useTimer } from "react-timer-hook";
 
@@ -18,6 +18,7 @@ export default function DashboardLayout({
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const [user, setUser] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
+  const [winner, setWinner] = useAtom(winnerAtom);
   const [voteCount, setVoteCount] = useState(0);
 
 
@@ -36,6 +37,32 @@ export default function DashboardLayout({
 
   }
   function handleResults(results: IResultsSTG) {
+    console.log({results})
+    if (!gameState) return;
+
+    let voteCountA = 0;
+    let voteCountB = 0;
+
+    let scoreA = 0;
+    let scoreB = 0;
+
+    results.gamerAKVals.forEach((gamerAK, i) => {
+      if (gamerAK == gameState.prompt.class) {
+        scoreA = scoreA + 30;
+      }
+    })
+    results.gamerBKVals.forEach((gamerBK, i) => {
+      if (gamerBK == gameState.prompt.class) {
+        scoreA = scoreB + 30;
+      }
+    })
+    results.votes.forEach((vote, i) => {
+      if (vote == GamerChoice.GamerA) voteCountA++;
+      if (vote == GamerChoice.GamerB) voteCountB++;
+    })
+    voteCountA > voteCountB ? scoreA = scoreA + 50 : scoreB = scoreB + 50;
+    scoreA > scoreB ? setWinner(GamerChoice.GamerA) : setWinner(GamerChoice.GamerB);
+
     setResults(results);
     router.push('/results');
   }
@@ -125,7 +152,7 @@ export default function DashboardLayout({
         <div className="flex flex-col lg:justify-center bg-black">
           {matches ?
             <>
-              <code className="bg-secondary text-black text-center p-1">You are {user.ctype == ClientType.Gamer ? `drawing ${(gameState.stage == Stage.Drawing) ? gameState.prompt : ""}` : `spectating people drawing ${gameState.prompt}`}</code>
+              <code className="bg-secondary text-black text-center p-1">You are {user.ctype == ClientType.Gamer ? `drawing ${(gameState.stage == Stage.Drawing) ? gameState.prompt.name : ""}` : `spectating people drawing ${gameState.prompt.name}`}</code>
               <ul className="steps m-3 overflow-clip bg-black">
                 <li className={`step ${gameState.stage >= Stage.AudienceLobby && 'step-secondary'}`}>Start</li>
                 <li className={`step ${gameState.stage >= Stage.Drawing && 'step-secondary'}`}>Drawing</li>
