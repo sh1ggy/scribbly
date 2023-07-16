@@ -12,6 +12,7 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== null) setQrCode(window.location.origin);
+    console.log(user);
   }, [])
   return (
     <main className="flex h-[calc(100vh-56px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">

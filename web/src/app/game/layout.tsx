@@ -150,7 +150,7 @@ export default function DashboardLayout({
               </>
             }
             <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
-            <code className="text-secondary rounded-lg p-1">{gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size - 2} votes`}</code>
+            <code className="text-secondary rounded-lg p-1">{gameState?.stage == Stage.Voting && `${voteCount}/${audience} votes`}</code>
           </p>
         </div>
       }
