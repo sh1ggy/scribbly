@@ -7,7 +7,7 @@ use bebop::SliceWrapper;
 use tokio::sync::mpsc::UnboundedSender;
 use tungstenite::Message;
 
-use crate::gen_schemas::api::{self, Drawing};
+use crate::gen_schemas::{api::{self, Drawing}, common};
 
 use super::{handlers::get_dto_binary, Clients, GameState, InternalMessage};
 
@@ -156,15 +156,26 @@ pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
             .unwrap()
             .as_millis();
 
-        let millis_elapsed_since_stage = (current_time - game.last_stage_time) as u64;
+
+        let stage_timing =  match game.stage {
+            api::Stage::Drawing => {
+                common::DRAWING_TIME
+            },
+            api::Stage::AudienceLobby => common::AUDIENCE_LOBBY_TIME,
+            api::Stage::Voting => common::VOTING_TIME,
+            _=> 0
+        };
+
+        let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
+
 
         let gamestate_dto = api::GameState {
+            stage_finish_time,
             id: game.id,
             clients,
             drawings,
             stage: game.stage,
             prompt: &game.prompt.name.clone(),
-            millis_elapsed_since_stage,
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);

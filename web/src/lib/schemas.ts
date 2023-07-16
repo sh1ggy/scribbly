@@ -256,7 +256,7 @@ export class DrawUpdate implements IDrawUpdate {
 export interface IGameState extends BebopRecord {
   id: Guid;
   stage: Stage;
-  millisElapsedSinceStage: bigint;
+  stageFinishTime: bigint;
   clients: Map<number, ClientType>;
   drawings: Array<IDrawing>;
   prompt: string;
@@ -265,7 +265,7 @@ export interface IGameState extends BebopRecord {
 export class GameState implements IGameState {
   public id: Guid;
   public stage: Stage;
-  public millisElapsedSinceStage: bigint;
+  public stageFinishTime: bigint;
   public clients: Map<number, ClientType>;
   public drawings: Array<IDrawing>;
   public prompt: string;
@@ -273,7 +273,7 @@ export class GameState implements IGameState {
   constructor(record: IGameState) {
     this.id = record.id;
     this.stage = record.stage;
-    this.millisElapsedSinceStage = record.millisElapsedSinceStage;
+    this.stageFinishTime = record.stageFinishTime;
     this.clients = record.clients;
     this.drawings = record.drawings;
     this.prompt = record.prompt;
@@ -306,7 +306,7 @@ export class GameState implements IGameState {
   public static validateCompatibility(record: IGameState): void {
     BebopTypeGuard.ensureGuid(record.id)
     BebopTypeGuard.ensureEnum(record.stage, Stage);
-    BebopTypeGuard.ensureUint64(record.millisElapsedSinceStage)
+    BebopTypeGuard.ensureUint64(record.stageFinishTime)
     BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
     BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
     BebopTypeGuard.ensureString(record.prompt)
@@ -345,7 +345,7 @@ export class GameState implements IGameState {
     const before = view.length;
     view.writeGuid(record.id);
     view.writeUint32(record.stage);
-    view.writeUint64(record.millisElapsedSinceStage);
+    view.writeUint64(record.stageFinishTime);
     view.writeUint32(record.clients.size);
     for (const [k0, v0] of record.clients) {
       view.writeUint32(k0);
@@ -403,7 +403,7 @@ export class GameState implements IGameState {
     let message: IGameState = {
       id: field0,
       stage: field1,
-      millisElapsedSinceStage: field2,
+      stageFinishTime: field2,
       clients: field3,
       drawings: field4,
       prompt: field5,

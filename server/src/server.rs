@@ -302,9 +302,19 @@ async fn send_gamestate_dto_cring<'a>(
             .collect();
         let current_time = time();
 
-        let millis_elapsed_since_stage = (current_time - game.last_stage_time) as u64;
+        let stage_timing =  match game.stage {
+            api::Stage::Drawing => {
+                common::DRAWING_TIME
+            },
+            api::Stage::AudienceLobby => common::AUDIENCE_LOBBY_TIME,
+            api::Stage::Voting => common::VOTING_TIME,
+            _=> 0
+        };
+
+        let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
+
         let gamestate_dto = api::GameState {
-            millis_elapsed_since_stage,
+            stage_finish_time,
             id: game.id,
             clients,
             drawings,
