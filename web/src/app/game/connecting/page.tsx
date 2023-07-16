@@ -65,13 +65,11 @@ export default function Game() {
   return (
     <main className="flex max-h-[calc(100vh-188.5px)] flex-col items-center justify-center space-y-24 p-24 bg-slate-700">
       <>
-
-
-        <p>You are player type: {ClientType[user.ctype]}</p>
+        <p className='text-center'>You are player type: {ClientType[user.ctype]}</p>
         {user.ctype == ClientType.Unknown ?
 
-          <p className='text-4xl'>Loading...</p> :
-          <p className='text-4xl'>Waiting on players</p>}
+          <p className='text-4xl text-center'>Loading...</p> :
+          <p className='text-4xl text-center'>Waiting on players</p>}
       </>
     </main>
   )
