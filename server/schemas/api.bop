@@ -53,11 +53,15 @@ struct NewSTG {
 
 struct ResultsSTG { // keep in global state
   guid id;
-  GamerChoice outcome;
   GamerChoice[] votes;
+  uint32[] gamerAKVals;
+  uint32[] gamerBKVals;
+
   Drawing[] drawings;
   map[uint32, ClientType] clients;
+
   string prompt;
+
 }
 struct Drawing {
   Coord[][] strokes;

@@ -169,7 +169,7 @@ select_nrows = 3
 doodles = CustomDataset("results.csv", "D:/scribbly/server/", nrows=select_nrows, size=SIZE, mode="train")
 
 
-print('Train set:', len(doodles))
+# print('Train set:', len(doodles))
 loader = DataLoader(doodles, batch_size=2, shuffle=True, num_workers=0)
 
 model = torchvision.models.resnet18(pretrained=True)
@@ -193,14 +193,19 @@ model.load_state_dict(checkpoint)
 # try and run the image through the model
 model.eval()
 labels = np.empty((0,3))
+results = []
 for images, label, votes in loader:
     output = model(images)
     # We get the output in batches so in this case we got both out
-    
-    print(output.shape)
-    print(output)
-    print( 'got output for class', output[label])
-    print('got votes for class', votes)
+    # print(output.shape)
+    # print('got votes for class', votes)
+
     _, pred = output.topk(3, 1, True, True)
     labels = np.concatenate([labels, pred], axis = 0)
-    print(labels)
+    # print(labels)
+
+import json
+# Get last two elements of labels
+# print(labels[-2:])
+
+print(json.dumps(labels[-2:].tolist()))
