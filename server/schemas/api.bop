@@ -31,6 +31,7 @@ enum ServerMessageType {
 
 struct DrawUpdate {
   Coord currentPoint;
+  Coord prevPoint;
   GamerChoice gamer;
 }
 

@@ -28,8 +28,8 @@ export default function Audience() {
 
   const [horizontal, setHorizontal] = useState(false);
   // use ref instead of usestate as per instruction of usedraw for prevpoints because the function doesn't curry state
-  const prevPointA = useRef<ICoord | null>(null);
-  const prevPointB = useRef<ICoord | null>(null);
+  // const prevPointA = useRef<ICoord | null>(null);
+  // const prevPointB = useRef<ICoord | null>(null);
 
   const handleAudienceDrawing = (drawData: IDrawUpdate) => {
     console.log({ drawData })
@@ -38,24 +38,26 @@ export default function Audience() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let prevPoint = drawData.gamer == GamerChoice.GamerA ? prevPointA.current : prevPointB.current;
-    if (prevPoint) {
-      prevPoint = { x: prevPoint.x * CANVAS_SIZE, y: prevPoint.y * CANVAS_SIZE };
-    }
+    // let prevPoint = drawData.gamer == GamerChoice.GamerA ? prevPointA.current : prevPointB.current;
+    // if (prevPoint) {
+    //   prevPoint = { x: prevPoint.x * CANVAS_SIZE, y: prevPoint.y * CANVAS_SIZE };
+    // }
 
     // const prevPoint: ICoord = { x: drawData.prevPoint.x * canvasSize, y: drawData.prevPoint.y * canvasSize }
     // const currentPoint: ICoord = { x: drawData.currentPoint.x * canvasSize, y: drawData.currentPoint.y * canvasSize }
     // console.log("DRAW: ", { prevPoint, currentPoint });
     const currentPoint: ICoord = { x: drawData.currentPoint.x * CANVAS_SIZE, y: drawData.currentPoint.y * CANVAS_SIZE }
+    const prevPoint: ICoord = { x: drawData.prevPoint.x * CANVAS_SIZE, y: drawData.prevPoint.y * CANVAS_SIZE }
     // debugger;
-    console.log({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
+    // console.log({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
+    console.log("DRAW: ", {prevPoint, currentPoint});
     drawLine({ prevPoint: prevPoint, currentPoint: currentPoint, ctx, color })
-    if (drawData.gamer == GamerChoice.GamerA) {
-      prevPointA.current = drawData.currentPoint;
-    }
-    else {
-      prevPointB.current = drawData.currentPoint;
-    }
+    // if (drawData.gamer == GamerChoice.GamerA) {
+    //   prevPointA.current = drawData.currentPoint;
+    // }
+    // else {
+    //   prevPointB.current = drawData.currentPoint;
+    // }
   };
 
   function handleSendVote(userChoice: GamerChoice) {
@@ -88,14 +90,14 @@ export default function Audience() {
   }
 
   function handleFinishStroke(finishStroke: IFinishStroke) {
-    if (!gameState) return;
-    console.log("FINISH STROKE", { finishStroke })
-    if (finishStroke.gamer == GamerChoice.GamerA) {
-      prevPointA.current = null
-    }
-    if (finishStroke.gamer == GamerChoice.GamerB) {
-      prevPointB.current = null
-    }
+    // if (!gameState) return;
+    // console.log("FINISH STROKE", { finishStroke })
+    // if (finishStroke.gamer == GamerChoice.GamerA) {
+    //   prevPointA.current = null
+    // }
+    // if (finishStroke.gamer == GamerChoice.GamerB) {
+    //   prevPointB.current = null
+    // }
   }
 
   function handleClear(clearData: IClear) {

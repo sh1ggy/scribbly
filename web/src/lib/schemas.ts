@@ -146,15 +146,18 @@ export enum ServerMessageType {
 
 export interface IDrawUpdate extends BebopRecord {
   currentPoint: ICoord;
+  prevPoint: ICoord;
   gamer: GamerChoice;
 }
 
 export class DrawUpdate implements IDrawUpdate {
   public currentPoint: ICoord;
+  public prevPoint: ICoord;
   public gamer: GamerChoice;
 
   constructor(record: IDrawUpdate) {
     this.currentPoint = record.currentPoint;
+    this.prevPoint = record.prevPoint;
     this.gamer = record.gamer;
   }
 
@@ -184,6 +187,7 @@ export class DrawUpdate implements IDrawUpdate {
    */
   public static validateCompatibility(record: IDrawUpdate): void {
     Coord.validateCompatibility(record.currentPoint);
+    Coord.validateCompatibility(record.prevPoint);
     BebopTypeGuard.ensureEnum(record.gamer, GamerChoice);
   }
 
@@ -192,6 +196,7 @@ export class DrawUpdate implements IDrawUpdate {
    */
   public static unsafeCast(record: any): IDrawUpdate {
       record.currentPoint = Coord.unsafeCast(record.currentPoint);
+      record.prevPoint = Coord.unsafeCast(record.prevPoint);
       return new DrawUpdate(record);
   }
 
@@ -220,6 +225,7 @@ export class DrawUpdate implements IDrawUpdate {
   public static encodeInto(record: IDrawUpdate, view: BebopView): number {
     const before = view.length;
     Coord.encodeInto(record.currentPoint, view)
+    Coord.encodeInto(record.prevPoint, view)
     view.writeUint32(record.gamer);
     const after = view.length;
     return after - before;
@@ -234,11 +240,14 @@ export class DrawUpdate implements IDrawUpdate {
   public static readFrom(view: BebopView): IDrawUpdate {
     let field0: ICoord;
     field0 = Coord.readFrom(view);
-    let field1: GamerChoice;
-    field1 = view.readUint32() as GamerChoice;
+    let field1: ICoord;
+    field1 = Coord.readFrom(view);
+    let field2: GamerChoice;
+    field2 = view.readUint32() as GamerChoice;
     let message: IDrawUpdate = {
       currentPoint: field0,
-      gamer: field1,
+      prevPoint: field1,
+      gamer: field2,
     };
     return new DrawUpdate(message);
   }
