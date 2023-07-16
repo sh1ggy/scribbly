@@ -202,7 +202,7 @@ class CustomDataset(Dataset):
         file = os.path.join(self.root_dir, csv_file)
         self.size = size
         self.mode = mode
-        self.doodle = pd.read_csv(file, usecols=['drawing', 'key_id', 'value'], nrows=nrows, skiprows=skiprows)
+        self.doodle = pd.read_csv(file, usecols=['drawing', 'key_id', 'votes'], nrows=nrows, skiprows=skiprows)
         self.transform = transform
 
     @staticmethod
@@ -272,10 +272,11 @@ class CustomDataset(Dataset):
 SIZE = 224 # for matching to imagenet
 
 select_nrows = 9
-doodles = CustomDataset("results.csv", "../", nrows=select_nrows, size=SIZE, mode="train")
+doodles = CustomDataset("results.csv", "D:/scribbly/server/", nrows=select_nrows, size=SIZE, mode="train")
+
 
 print('Train set:', len(doodles))
-loader = DataLoader(doodles, batch_size=9, shuffle=True, num_workers=0)
+loader = DataLoader(doodles, batch_size=2, shuffle=True, num_workers=0)
 
 
 
