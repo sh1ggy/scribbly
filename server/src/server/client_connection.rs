@@ -168,6 +168,10 @@ pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
 
         let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
 
+        let prompt = api::Prompt {
+            class: game.prompt.class,
+            name: &game.prompt.name.clone(),
+        };
 
         let gamestate_dto = api::GameState {
             stage_finish_time,
@@ -175,7 +179,7 @@ pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
             clients,
             drawings,
             stage: game.stage,
-            prompt: &game.prompt.name.clone(),
+            prompt
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);

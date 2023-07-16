@@ -41,7 +41,7 @@ struct GameState {
   uint64 stage_finish_time;
   map[uint32, ClientType] clients;
   Drawing[] drawings;
-  string prompt;
+  Prompt prompt;
 }
 struct ClientJoined {
   ClientType newClient;
@@ -60,9 +60,16 @@ struct ResultsSTG { // keep in global state
   Drawing[] drawings;
   map[uint32, ClientType] clients;
 
-  string prompt;
+  Prompt prompt;
 
 }
+
+struct Prompt
+{
+  string name;
+  uint32 class;
+}
+
 struct Drawing {
   Coord[][] strokes;
 }

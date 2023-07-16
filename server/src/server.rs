@@ -305,24 +305,26 @@ async fn send_gamestate_dto_cring<'a>(
             .collect();
         let current_time = time();
 
-        let stage_timing =  match game.stage {
-            api::Stage::Drawing => {
-                common::DRAWING_TIME
-            },
+        let stage_timing = match game.stage {
+            api::Stage::Drawing => common::DRAWING_TIME,
             api::Stage::AudienceLobby => common::AUDIENCE_LOBBY_TIME,
             api::Stage::Voting => common::VOTING_TIME,
-            _=> 0
+            _ => 0,
         };
 
         let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
 
+        let prompt = api::Prompt {
+            class: game.prompt.class,
+            name: &game.prompt.name.clone(),
+        };
         let gamestate_dto = api::GameState {
             stage_finish_time,
             id: game.id,
             clients,
             drawings,
             stage: game.stage,
-            prompt: &game.prompt.name.clone(),
+            prompt,
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);
