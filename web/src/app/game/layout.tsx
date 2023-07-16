@@ -37,6 +37,7 @@ export default function DashboardLayout({
 
   }
   function handleResults(results: IResultsSTG) {
+    console.log({results})
     if (!gameState) return;
 
     let voteCountA = 0;
@@ -61,7 +62,7 @@ export default function DashboardLayout({
     })
     voteCountA > voteCountB ? scoreA = scoreA + 50 : scoreB = scoreB + 50;
     scoreA > scoreB ? setWinner(GamerChoice.GamerA) : setWinner(GamerChoice.GamerB);
-    
+
     setResults(results);
     router.push('/results');
   }

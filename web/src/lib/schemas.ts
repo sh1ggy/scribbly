@@ -600,9 +600,6 @@ export interface IResultsSTG extends BebopRecord {
   votes: Array<GamerChoice>;
   gamerAKVals: Array<number>;
   gamerBKVals: Array<number>;
-  drawings: Array<IDrawing>;
-  clients: Map<number, ClientType>;
-  prompt: IPrompt;
 }
 
 export class ResultsSTG implements IResultsSTG {
@@ -610,18 +607,12 @@ export class ResultsSTG implements IResultsSTG {
   public votes: Array<GamerChoice>;
   public gamerAKVals: Array<number>;
   public gamerBKVals: Array<number>;
-  public drawings: Array<IDrawing>;
-  public clients: Map<number, ClientType>;
-  public prompt: IPrompt;
 
   constructor(record: IResultsSTG) {
     this.id = record.id;
     this.votes = record.votes;
     this.gamerAKVals = record.gamerAKVals;
     this.gamerBKVals = record.gamerBKVals;
-    this.drawings = record.drawings;
-    this.clients = record.clients;
-    this.prompt = record.prompt;
   }
 
   /**
@@ -653,16 +644,12 @@ export class ResultsSTG implements IResultsSTG {
     BebopTypeGuard.ensureArray(record.votes, (value) => BebopTypeGuard.ensureEnum(value, GamerChoice));
     BebopTypeGuard.ensureArray(record.gamerAKVals, BebopTypeGuard.ensureUint32);
     BebopTypeGuard.ensureArray(record.gamerBKVals, BebopTypeGuard.ensureUint32);
-    BebopTypeGuard.ensureArray(record.drawings, Drawing.validateCompatibility);
-    BebopTypeGuard.ensureMap(record.clients, BebopTypeGuard.ensureUint32, (value) => BebopTypeGuard.ensureEnum(value, ClientType));
-    Prompt.validateCompatibility(record.prompt);
   }
 
   /**
    * Unsafely creates an instance of {@link ResultsSTG} from the specified dynamic object. No type checking is performed.
    */
   public static unsafeCast(record: any): IResultsSTG {
-      record.prompt = Prompt.unsafeCast(record.prompt);
       return new ResultsSTG(record);
   }
 
@@ -712,19 +699,6 @@ export class ResultsSTG implements IResultsSTG {
         view.writeUint32(record.gamerBKVals[i0]);
       }
     }
-    {
-      const length0 = record.drawings.length;
-      view.writeUint32(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        Drawing.encodeInto(record.drawings[i0], view)
-      }
-    }
-    view.writeUint32(record.clients.size);
-    for (const [k0, v0] of record.clients) {
-      view.writeUint32(k0);
-      view.writeUint32(v0);
-    }
-    Prompt.encodeInto(record.prompt, view)
     const after = view.length;
     return after - before;
   }
@@ -768,38 +742,11 @@ export class ResultsSTG implements IResultsSTG {
         field3[i0] = x0;
       }
     }
-    let field4: Array<IDrawing>;
-    {
-      let length0 = view.readUint32();
-      field4 = new Array<IDrawing>(length0);
-      for (let i0 = 0; i0 < length0; i0++) {
-        let x0: IDrawing;
-        x0 = Drawing.readFrom(view);
-        field4[i0] = x0;
-      }
-    }
-    let field5: Map<number, ClientType>;
-    {
-      let length0 = view.readUint32();
-      field5 = new Map<number, ClientType>();
-      for (let i0 = 0; i0 < length0; i0++) {
-        let k0: number;
-        let v0: ClientType;
-        k0 = view.readUint32();
-        v0 = view.readUint32() as ClientType;
-        field5.set(k0, v0);
-      }
-    }
-    let field6: IPrompt;
-    field6 = Prompt.readFrom(view);
     let message: IResultsSTG = {
       id: field0,
       votes: field1,
       gamerAKVals: field2,
       gamerBKVals: field3,
-      drawings: field4,
-      clients: field5,
-      prompt: field6,
     };
     return new ResultsSTG(message);
   }
