@@ -70,23 +70,30 @@ export default function DashboardLayout({
     else {
       scoreB = scoreB + 50
     }
+    let winner = 0;
     if (scoreA > scoreB) {
-      setWinner(GamerChoice.GamerA)
+      // setWinner(GamerChoice.GamerA)
+      winner = GamerChoice.GamerA
+      console.log("WINNER A")
     }
     else {
-      setWinner(GamerChoice.GamerB)
+      // setWinner(GamerChoice.GamerB)
+      winner = GamerChoice.GamerB;
+      console.log("WINNER B")
     }
+    console.log(scoreA, scoreB)
+    setWinner(winner)
     console.log({winner})
     const sum: ResultsSum  = {
       newGameState: gameState!,
       result: resultsSTG,
 
     }
-    setGameState(gameState);
-    setResults(resultsSTG);
+    // setGameState(gameState);
+    // setResults(resultsSTG);
     setFinalResult(sum);
 
-    console.log({results})
+    console.log({sum})
     router.push('/results');
   }
 
