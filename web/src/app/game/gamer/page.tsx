@@ -32,7 +32,7 @@ export default function Gamer() {
   // Countdown timer
   // TODO: invoke event to submit drawing on timeout
   const TIMER_DELAY = 1000;
-  const [drawTimer, setDrawTimer] = useState(gameState && (DRAWING_TIME - Number(gameState.millisElapsedSinceStage))/1000);
+  const [drawTimer, setDrawTimer] = useState(DRAWING_TIME/1000);
 
   function cursorUp() {
     if (!gameState || gameState.stage != Stage.Drawing) return
@@ -78,6 +78,7 @@ export default function Gamer() {
     if (gameState?.stage == Stage.Voting) setJudgement(true);
     else if (!gameState || gameState.stage != Stage.Drawing) return;
     console.log(gameState);
+    setDrawTimer(DRAWING_TIME - Number(gameState.millisElapsedSinceStage)/1000)
   }, [gameState])
 
   useEffect(() => {
