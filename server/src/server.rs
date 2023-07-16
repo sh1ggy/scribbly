@@ -243,6 +243,9 @@ async fn save_results_to_csv(
         //     votes_ratio
         // );
 
+        // An empty result looks like this, make sure to forfiet the player
+        // "[]",315,0
+
         let csv_entry = format!(
             "\n\"{}\",{},{}",
             csv_string,
