@@ -1,6 +1,6 @@
 'use client'
-import { ClientMessageType, GameState, IGameState, IPing, Ping, ServerMessageType, Stage } from "@/lib/schemas";
-import { gameStateAtom } from "@/lib/store";
+import { ClientMessageType, ClientType, ClientTypeDTO, GameState, IClientTypeDTO, IGameState, IPing, Ping, ServerMessageType, Stage } from "@/lib/schemas";
+import { gameStateAtom, userStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
 import { env } from "process";
@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 export default function Admin() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const [user, setUser] = useAtom(userStateAtom);
   const [noGameState, setNoGameState] = useState(false);
   function handlePing(msg: IPing) {
     console.log({ msg });
@@ -47,6 +48,11 @@ export default function Admin() {
     window.ADMIN_SOCK.send(getDTOBuffer(sendTest, ClientMessageType.TestADM));
   }
 
+  function handleClientType(dto: IClientTypeDTO) {
+    console.log({dto});
+    setUser(dto);
+  }
+
   useEffect(() => {
     // window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
     // window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
@@ -64,6 +70,9 @@ export default function Admin() {
           return;
         case ServerMessageType.NoGameState:
           setNoGameState(true);
+          return;
+        case ServerMessageType.ClientTypeDTO:
+          handleClientType(ClientTypeDTO.decode(data));
           return;
       }
     }

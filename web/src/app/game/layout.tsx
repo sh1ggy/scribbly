@@ -15,7 +15,7 @@ export default function DashboardLayout({
   const [audience, setAudience] = useState(0);
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
-  const [userState, setUserState] = useAtom(userStateAtom);
+  const [user, setUser] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
   const [voteCount, setVoteCount] = useState(0);
 
@@ -90,7 +90,7 @@ export default function DashboardLayout({
         <div className="flex flex-col lg:justify-center bg-black">
           {matches ?
             <>
-              <code className="bg-secondary text-black text-center p-1">You are {userState.ctype == ClientType.Gamer ? `drawing ${(gameState && gameState.stage == Stage.Drawing) ? gameState.prompt : ""}` : "spectating"}</code>
+              <code className="bg-secondary text-black text-center p-1">You are {user.ctype == ClientType.Gamer ? `drawing ${(gameState.stage == Stage.Drawing) ? gameState.prompt : ""}` : `spectating people drawing ${gameState.prompt}`}</code>
               <ul className="steps m-3 overflow-clip bg-black">
                 <li className={`step ${gameState.stage >= Stage.AudienceLobby && 'step-secondary'}`}>Start</li>
                 <li className={`step ${gameState.stage >= Stage.Drawing && 'step-secondary'}`}>Drawing</li>
