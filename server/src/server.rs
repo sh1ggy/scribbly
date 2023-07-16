@@ -210,7 +210,7 @@ async fn save_results_to_csv(
         .write(true)
         .create(true)
         .append(true)
-        .open("../results.csv")
+        .open("./results.csv")
         .await
         .unwrap();
     // Create a `BufWriter` for efficient writing
@@ -232,13 +232,25 @@ async fn save_results_to_csv(
         //Drawing, key, word, game_id, vote
         let gamer_id = api::GamerChoice::try_from((gamer_id as u32) +1).unwrap();
         let sum_count = votes.iter().count();
+        let votes_for_gamer = votes.iter().filter(|v| (**v == gamer_id.clone())).count();
+        println!("{:?} got {:?} votes",gamer_id, votes_for_gamer);
+        let votes_ratio = votes_for_gamer as f32 / sum_count as f32;
+        println!("Votes ratio: {:?}", votes_ratio);
+        // let csv_entry = format!(
+        //     "{},{},{},{},{}",
+        //     csv_string,
+        //     prompt.class.clone(),
+        //     prompt.name.clone(),
+        //     game_id,
+        //     votes_ratio 
+        // );
+
         let csv_entry = format!(
-            "{},{},{},{},{}",
+            "{},{},{}",
             csv_string,
             prompt.class.clone(),
-            prompt.name.clone(),
-            game_id,
-            votes.iter().filter(|v| (**v == gamer_id)).count() as f32 / sum_count as f32);
+            votes_ratio 
+        );
 
 
         writer.write(csv_entry.as_bytes()).await.unwrap();

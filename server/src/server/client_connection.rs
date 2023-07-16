@@ -60,7 +60,9 @@ impl ClientConnection {
         let clients = self.clients_ref.lock().unwrap();
         for (_, client) in clients.iter() {
             let msg = msg.clone();
-            client.send(msg).unwrap();
+            if let Err(e) = client.send(msg) {
+                println!("Error sending from client: {:?}", e);
+            }
         }
     }
 
