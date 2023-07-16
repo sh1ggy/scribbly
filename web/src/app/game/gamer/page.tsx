@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useDraw } from "@/hooks/useDraw";
 import { Draw, Point, drawLine } from '@/utils/drawLine'
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ClientMessageType, ClientTypeDTO, CursorLocation, GameState, ServerMessageType, Stage } from "@/lib/schemas";
+import { ClientMessageType, ClientTypeDTO, CursorLocation, DRAWING_TIME, GameState, ServerMessageType, Stage } from "@/lib/schemas";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
 import { gameStateAtom } from "@/lib/store";
@@ -32,7 +32,7 @@ export default function Gamer() {
   // Countdown timer
   // TODO: invoke event to submit drawing on timeout
   const TIMER_DELAY = 1000;
-  const [drawTimer, setDrawTimer] = useState(30);
+  const [drawTimer, setDrawTimer] = useState(gameState && (DRAWING_TIME - Number(gameState.millisElapsedSinceStage))/1000);
 
   function cursorUp() {
     if (!gameState || gameState.stage != Stage.Drawing) return
@@ -81,6 +81,7 @@ export default function Gamer() {
   }, [gameState])
 
   useEffect(() => {
+    if (!drawTimer) return;
     drawTimer > 0 && setTimeout(() => setDrawTimer(drawTimer - 1), TIMER_DELAY);
   }, [drawTimer])
   return (

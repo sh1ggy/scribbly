@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export default function Audience() {
   const CANVAS_SIZE = 400
   const [voting, setVoting] = useState(false);
+  const [voted, setVoted] = useState(false);
   const router = useRouter();
 
   const [color, setColor] = useState<string>('#000')
@@ -62,6 +63,7 @@ export default function Audience() {
       choice: userChoice,
     });
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendVote, ClientMessageType.Vote));
+    setVoted(true);
   }
 
   function handleGameState() {
@@ -117,7 +119,7 @@ export default function Audience() {
           return;
         case ServerMessageType.Clear:
           handleClear(Clear.decode(data));
-          return
+          return          
       }
     }
     if (window.innerWidth > window.innerHeight) setHorizontal(true);
@@ -136,49 +138,49 @@ export default function Audience() {
     }
   }, [gameState])
 
-  useEffect(() => {
-    
-  }, [])
-
   return (
     <div
       className='h-[calc(100vh-188.5px)] bg-slate-700 flex justify-center items-center'>
-      <div
-        ref={containerRef}
-        className={`flex flex-col mt-[188.5px] lg:mt-0 lg:flex-row justify-center items-center w-full h-full`}>
-        <div className="flex flex-col">
-          <canvas
-            ref={canvasRefA}
-            height={CANVAS_SIZE}
-            width={CANVAS_SIZE}
-            className='bg-white border-8 rounded-lg border-secondary border-solid'
-          />
-          {voting &&
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                handleSendVote(GamerChoice.GamerA);
-              }}
-              className="btn border-none text-xs md:text-md">Vote</button>
-          }
+      {voted ?
+        <p className="text-4xl p-2 w-full text-center">Awaiting judgement</p>
+        :
+        <div
+          ref={containerRef}
+          className={`flex flex-col mt-[188.5px] lg:mt-0 lg:flex-row justify-center items-center w-full h-full`}>
+          <div className="flex flex-col">
+            <canvas
+              ref={canvasRefA}
+              height={CANVAS_SIZE}
+              width={CANVAS_SIZE}
+              className='bg-white border-8 rounded-lg border-secondary border-solid'
+            />
+            {voting &&
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSendVote(GamerChoice.GamerA);
+                }}
+                className="btn border-none text-xs md:text-md">Vote</button>
+            }
+          </div>
+          <div className="flex flex-col">
+            <canvas
+              ref={canvasRefB}
+              height={CANVAS_SIZE}
+              width={CANVAS_SIZE}
+              className='bg-white duration-200 border-8 rounded-lg border-red-400 border-solid'
+            />
+            {voting &&
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSendVote(GamerChoice.GamerB);
+                }}
+                className="btn border-none text-xs md:text-md">Vote</button>
+            }
+          </div>
         </div>
-        <div className="flex flex-col">
-          <canvas
-            ref={canvasRefB}
-            height={CANVAS_SIZE}
-            width={CANVAS_SIZE}
-            className='bg-white duration-200 border-8 rounded-lg border-red-400 border-solid'
-          />
-          {voting &&
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                handleSendVote(GamerChoice.GamerB);
-              }}
-              className="btn border-none text-xs md:text-md">Vote</button>
-          }
-        </div>
-      </div>
+      }
     </div >
   )
 }

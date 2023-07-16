@@ -42,8 +42,10 @@ export default function DashboardLayout({
         return;
       case ServerMessageType.ResultsSTG:
         handleResults(ResultsSTG.decode(data));
+        return;
       case ServerMessageType.VoteUpdate:
         setVoteCount(voteCount + 1);
+        return;
       case ServerMessageType.Restart:
         // TODO: Toast
         router.push("/");
@@ -64,6 +66,10 @@ export default function DashboardLayout({
     const openConnection = () => {
       console.log('OPENED CONN');
     }
+    if (window.SCRIBBLE_SOCK == undefined) {
+      router.push('/')
+      return;
+    }
     window.SCRIBBLE_SOCK.addEventListener('open', openConnection);
     window.SCRIBBLE_SOCK.addEventListener('message', message);
     window.SCRIBBLE_SOCK.addEventListener('error', error);
@@ -80,34 +86,33 @@ export default function DashboardLayout({
 
   return (
     <section className="flex flex-col item-center lg:justify-center">
-      <div className="flex flex-col lg:justify-center">
-        {matches ?
-          <>
-            <code className="bg-secondary text-black text-center p-1">You are {userState.ctype == ClientType.Gamer ? `drawing ${(gameState && gameState.stage == Stage.Drawing) ? gameState.prompt : ""}` : "spectating"}</code>
-
-            {gameState &&
-              <ul className="steps m-3 overflow-clip">
+      {gameState &&
+        <div className="flex flex-col lg:justify-center bg-black">
+          {matches ?
+            <>
+              <code className="bg-secondary text-black text-center p-1">You are {userState.ctype == ClientType.Gamer ? `drawing ${(gameState && gameState.stage == Stage.Drawing) ? gameState.prompt : ""}` : "spectating"}</code>
+              <ul className="steps m-3 overflow-clip bg-black">
                 <li className={`step ${gameState.stage >= Stage.AudienceLobby && 'step-secondary'}`}>Start</li>
                 <li className={`step ${gameState.stage >= Stage.Drawing && 'step-secondary'}`}>Drawing</li>
                 <li className={`step ${gameState.stage >= Stage.Voting && 'step-secondary'}`}>Voting</li>
                 <li className={`step ${gameState.stage >= Stage.Judging && 'step-secondary'}`}>Judging</li>
                 <li className={`step ${gameState.stage >= Stage.Results && 'step-secondary'}`}>Results</li>
               </ul>
-            }
-          </>
-          :
-          <ul className="steps m-3 overflow-clip">
-            <div className="flex justify-center items-center space-x-4">
-              <p className="p-2 bg-secondary text-black rounded-lg">Phase</p>
-              <code className="p-1 rounded-md bg-primary">{gameState && Stage[gameState?.stage]}</code>
-            </div>
-          </ul>
-        }
-        <p className="space-x-3 text-sm pb-2 bg-black rounded-lg text-center">
-          <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
-          <code className="text-secondary rounded-lg p-1">{gameState && gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size} votes`}</code>
-        </p>
-      </div>
+            </>
+            :
+            <ul className="steps m-3 overflow-clip">
+              <div className="flex justify-center items-center space-x-4">
+                <p className="p-2 bg-secondary text-black rounded-lg">Phase</p>
+                <code className="p-1 rounded-md bg-primary">{gameState && Stage[gameState?.stage]}</code>
+              </div>
+            </ul>
+          }
+          <p className="space-x-3 text-sm pb-2 bg-black rounded-lg text-center">
+            <code className="bg-secondary text-black rounded-lg p-1">{audience}</code> people in audience
+            <code className="text-secondary rounded-lg p-1">{gameState && gameState?.stage == Stage.Voting && `${voteCount}/${gameState.clients.size} votes`}</code>
+          </p>
+        </div>
+      }
       {children}
     </section >
   )

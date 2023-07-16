@@ -18,8 +18,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className='dark'>
-      <body className={inter.className + "bg-slate-700"}>
+    <html lang="en" className='dark bg-slate-700'>
+      <body className={inter.className}>
         <div className='flex items-center justify-center'>
           {/* Perhaps this link is also fuckign with the shifting */}
           <Link className='transition-colors hover:bg-slate-500 duration-500 py-2 z-10 w-full text-center bg-primary' href="/">
