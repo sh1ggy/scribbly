@@ -100,8 +100,14 @@ export default function Audience() {
   }
 
   function handleClear(clearData: IClear) {
-    if (!gameState) return;
-    let canvas = clearData.gamer == GamerChoice.GamerA ? canvasRefA.current : canvasRefB.current
+    console.log({clearData});
+    let canvas;
+    if (clearData.gamer == GamerChoice.GamerA) {
+      canvas = canvasRefA.current;
+    }
+    if (clearData.gamer == GamerChoice.GamerB) {
+      canvas = canvasRefB.current;
+    }
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;

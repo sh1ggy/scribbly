@@ -78,7 +78,7 @@ export default function Gamer() {
 
   function handleClear() {
     const sendClear = new Uint8Array();
-    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendClear, ClientMessageType.FinishStroke))
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendClear, ClientMessageType.Clear))
     console.log("CLEAR COMPLETE")
   }
 
@@ -107,7 +107,7 @@ export default function Gamer() {
             />
             <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none'
               onClick={() => {
-                clear
+                clear();
                 handleClear()
               }
               }>
