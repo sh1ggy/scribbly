@@ -1,17 +1,16 @@
 'use client'
-import { ClientMessageType, ClientType, ClientTypeDTO, GameState, IClientTypeDTO, IGameState, IPing, Ping, ServerMessageType, Stage } from "@/lib/schemas";
+import { ClientMessageType, ClientTypeDTO, GameState, IClientTypeDTO, IGameState, IPing, Ping, ServerMessageType } from "@/lib/schemas";
 import { gameStateAtom, userStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
 import { useAtom } from "jotai";
-import { env } from "process";
 import { useEffect, useState } from "react";
 
 export default function Admin() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const [user, setUser] = useAtom(userStateAtom);
   const [noGameState, setNoGameState] = useState(false);
+  
   function handlePing(msg: IPing) {
-    console.log({ msg });
     let sendPing = Ping.encode({
       msg: `sup from client`,
       test: false
@@ -23,39 +22,35 @@ export default function Admin() {
     window.ADMIN_SOCK.send(getDTOBuffer(sendAdminAuth, ClientMessageType.AuthADM));
   }
   function handleStartGame() {
-    console.log("client starting game from admin");
+    console.log("Client starting game from admin");
     let sendStart = new Uint8Array();
     window.ADMIN_SOCK.send(getDTOBuffer(sendStart, ClientMessageType.StartADM))
-  }
-  function handleStageChange() {
-    console.log("client changing stage from admin");
-    let sendStageChange = new Uint8Array();
-    window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.StageChangeADM))
-  }
-  function handleGameMode() {
-    console.log("CHANGING GAME MODE");
-    let sendGameMode = new Uint8Array();
-    window.ADMIN_SOCK.send(getDTOBuffer(sendGameMode, ClientMessageType.GameModeADM))
   }
   function handleGameState(state: IGameState) {
     console.log({ state });
     setGameState(state);
   }
-
+  function handleClientType(dto: IClientTypeDTO) {
+    console.log({dto});
+    setUser(dto);
+  }
+  // function handleGameMode() {
+  //   console.log("CHANGING GAME MODE");
+  //   let sendGameMode = new Uint8Array();
+  //   window.ADMIN_SOCK.send(getDTOBuffer(sendGameMode, ClientMessageType.GameModeADM))
+  // }
+  // function handleStageChange() {
+  //   console.log("client changing stage from admin");
+  //   let sendStageChange = new Uint8Array();
+  //   window.ADMIN_SOCK.send(getDTOBuffer(sendStageChange, ClientMessageType.StageChangeADM))
+  // }
   function handleTest() {
     console.log("TEST");
     let sendTest = new Uint8Array();
     window.ADMIN_SOCK.send(getDTOBuffer(sendTest, ClientMessageType.TestADM));
   }
 
-  function handleClientType(dto: IClientTypeDTO) {
-    console.log({dto});
-    setUser(dto);
-  }
-
   useEffect(() => {
-    // window.ADMIN_SOCK = new WebSocket('ws://localhost:8001');
-    // window.ADMIN_SOCK = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:8001`);
     window.ADMIN_SOCK = new WebSocket(process.env.NEXT_PUBLIC_WS);
     console.log("connecting", process.env.NEXT_PUBLIC_WS)
     const message = async (event: MessageEvent<Blob>) => {
@@ -63,6 +58,9 @@ export default function Admin() {
       switch (type) {
         case ServerMessageType.Ping:
           handlePing(Ping.decode(data));
+          return;
+        case ServerMessageType.Restart: 
+          handleStartGame();
           return;
         case ServerMessageType.GameState:
           handleGameState(GameState.decode(data));
@@ -107,7 +105,7 @@ export default function Admin() {
             handleStartGame();
           }}
           className="btn">Start/Restart Game</button>
-        <button
+        {/* <button
           onClick={(e) => {
             e.preventDefault();
             handleStageChange();
@@ -124,7 +122,7 @@ export default function Admin() {
             e.preventDefault();
             handleTest();
           })}
-          className="btn">Run Python Code</button>
+          className="btn">Run Python Code</button> */}
       </div>
     </main >
   )
