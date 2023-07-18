@@ -7,7 +7,10 @@ use bebop::SliceWrapper;
 use tokio::sync::mpsc::UnboundedSender;
 use tungstenite::Message;
 
-use crate::gen_schemas::{api::{self, Drawing}, common};
+use crate::gen_schemas::{
+    api::{self, Drawing},
+    common,
+};
 
 use super::{handlers::get_dto_binary, Clients, GameState, InternalMessage};
 
@@ -42,6 +45,91 @@ impl ClientType {
             ctype_dto.gamer_id = gamer_order;
         }
         ctype_dto
+    }
+}
+
+#[derive(Debug)]
+pub struct InnerConn {
+    pub clients_ref: Arc<Mutex<Clients>>,
+    pub game_ref: Arc<Mutex<Option<GameState>>>,
+}
+
+impl InnerConn {
+    
+    pub async fn broadcast_message(&self, msg: &Message) {
+        let clients = self.clients_ref.lock().unwrap();
+        for (_, client) in clients.iter() {
+            let msg = msg.clone();
+            if let Err(e) = client.send(msg) {
+                println!("Error sending from client: {:?}", e);
+            }
+        }
+    }
+
+    pub async fn send_gamestate_dto<'a>(&mut self ) {
+        let e = api::Empty {};
+
+        let mut msg = Message::Binary(get_dto_binary(
+            e,
+            api::ServerMessageType::NoGameState as u32,
+        ));
+
+        if let Some(game) = &mut *self.game_ref.lock().unwrap() {
+            let mut drawings: Vec<Drawing> = Vec::new();
+            let game_drawings = game.drawings.clone();
+            for drawing in game_drawings.iter() {
+                let mut drawingDto = Drawing {
+                    strokes: Vec::new(),
+                };
+
+                for stroke in drawing.iter() {
+                    // Idk why we need a ref here
+                    let saved = &stroke;
+                    drawingDto.strokes.push(SliceWrapper::Cooked(saved));
+                }
+
+                drawings.push(drawingDto);
+            }
+
+            let clients = game
+                .clients
+                .clone()
+                .into_iter()
+                .map(|(id, ctype)| (id, ctype.into()))
+                .collect();
+
+            let current_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis();
+
+            let stage_timing = match game.stage {
+                api::Stage::Drawing => common::DRAWING_TIME,
+                api::Stage::AudienceLobby => common::AUDIENCE_LOBBY_TIME,
+                api::Stage::Voting => common::VOTING_TIME,
+                _ => 0,
+            };
+
+            let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
+
+            let prompt = api::Prompt {
+                class: game.prompt.class,
+                name: &game.prompt.name.clone(),
+            };
+
+            let gamestate_dto = api::GameState {
+                stage_finish_time,
+                id: game.id,
+                clients,
+                drawings,
+                stage: game.stage,
+                prompt,
+            };
+            let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
+            msg = Message::Binary(bin);
+        }
+
+        self.broadcast_message(&msg).await;
     }
 }
 
@@ -156,14 +244,11 @@ pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
             .unwrap()
             .as_millis();
 
-
-        let stage_timing =  match game.stage {
-            api::Stage::Drawing => {
-                common::DRAWING_TIME
-            },
+        let stage_timing = match game.stage {
+            api::Stage::Drawing => common::DRAWING_TIME,
             api::Stage::AudienceLobby => common::AUDIENCE_LOBBY_TIME,
             api::Stage::Voting => common::VOTING_TIME,
-            _=> 0
+            _ => 0,
         };
 
         let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
@@ -179,7 +264,7 @@ pub async fn send_gamestate_dto<'a>(conn: &mut ClientConnection) {
             clients,
             drawings,
             stage: game.stage,
-            prompt
+            prompt,
         };
         let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
         msg = Message::Binary(bin);

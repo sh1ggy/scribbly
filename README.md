@@ -32,4 +32,5 @@ This application is a [skribblio](https://skribbl.io/)/[QuickDraw](https://quick
 - [ ] Use probability values instead of k values in ml
 - [ ] Find outsourced ai host like huggingface,  
 - [ ] Custom classes
+- [ ] Resolve TODOs
 

@@ -108,6 +108,7 @@ async fn handle_admin_message(
     }
 }
 
+// This function should return error types and the caller should handle them by sending them back
 async fn handle_game_message(
     msg_type: client::ClientMessageType,
     data: &[u8],
@@ -146,26 +147,35 @@ async fn handle_game_message(
                 return ;
             };
             let drawing = &mut game.drawings[order as usize];
-            // Instead of pushing a new vec, finish using the older vec, 
+            // TODO: Instead of pushing a new vec, finish using the older vec through some kind of flag on drawing
             drawing.push(Vec::new());
         }
         client::ClientMessageType::Clear => {
-            let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+            let mut msg = None;
+
+            {
+                let mut game_option = conn.game_ref.lock().unwrap();
+                let Some(game) = &mut *game_option else {
                 return;
             };
-            let ClientType::Gamer(order) = conn.client_type else {
+                let ClientType::Gamer(order) = conn.client_type else {
                 return ;
             };
-            let drawing = &mut game.drawings[order as usize];
-            drawing.clear();
+                let drawing = &mut game.drawings[order as usize];
+                drawing.clear();
 
-            let msg = Message::Binary(get_dto_binary(
-                api::Clear {
-                    gamer: api::GamerChoice::try_from((order as u32) + 1).unwrap(),
-                },
-                api::ServerMessageType::Clear as u32,
-            ));
-            conn.broadcast_message(&msg).await;
+                msg = Some(Message::Binary(get_dto_binary(
+                    api::Clear {
+                        gamer: api::GamerChoice::try_from((order as u32) + 1).unwrap(),
+                    },
+                    api::ServerMessageType::Clear as u32,
+                )));
+            }
+
+            if (msg.is_some()) {
+                conn.broadcast_message(&msg.unwrap()).await;
+            }
+
         }
         client::ClientMessageType::Vote => {
             let vote = client::Vote::deserialize(data).unwrap();
@@ -190,7 +200,6 @@ async fn handle_game_message(
         _ => println!("Unhandled message for game {:?}", msg_type),
     }
 }
-
 
 fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> Option<DrawUpdate> {
     let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
@@ -220,7 +229,7 @@ fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> O
             ret_val = Some(DrawUpdate {
                 prev_point,
                 current_point,
-                gamer: gamer_choice
+                gamer: gamer_choice,
             })
         } else {
             ret_val = None;
