@@ -163,6 +163,7 @@ async fn handle_game_message(
             };
                 let drawing = &mut game.drawings[order as usize];
                 drawing.clear();
+                println!("Clearing drawing {:?}", order);
 
                 msg = Some(Message::Binary(get_dto_binary(
                     api::Clear {
@@ -175,7 +176,6 @@ async fn handle_game_message(
             if (msg.is_some()) {
                 conn.broadcast_message(&msg.unwrap()).await;
             }
-
         }
         client::ClientMessageType::Vote => {
             let vote = client::Vote::deserialize(data).unwrap();
