@@ -1,6 +1,7 @@
 'use client'
 
 import { Provider } from "jotai"
+import { GlobalToastProvider } from "@/components/Toast"
 
 export default function Providers({
   children, // will be a page or nested layout
@@ -8,9 +9,11 @@ export default function Providers({
   children: React.ReactNode
 }) {
   return (
-    <Provider>
-      {children}
-    </Provider>
+    <GlobalToastProvider>
+      <Provider>
+        {children}
+      </Provider>
+    </GlobalToastProvider>
   )
 }
 
