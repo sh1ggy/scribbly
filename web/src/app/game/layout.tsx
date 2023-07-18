@@ -7,7 +7,7 @@ import { ClientType, GameState, GamerChoice, IGameState, IPing, IResultsSTG, Pin
 import { resultsAtom, gameStateAtom, userStateAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 import { useTimer } from "react-timer-hook";
-
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export interface Results {
   innerResult: IResultsSTG,
   gameState: IGameState,
@@ -40,38 +40,43 @@ export default function DashboardLayout({
     restart(new Date(Number(gameState.stageFinishTime)));
 
   }
-  function handleResults(resultsSTG: IResultsSTG) {
+  async function handleResults(resultsSTG: IResultsSTG) {
     console.log({ resultsSTG })
 
-    let voteCountA = 0;
-    let voteCountB = 0;
+
     let scoreA = 0;
     let scoreB = 0;
     let winner = 0;
 
-    resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
-      if (gamerAK == gameState?.prompt.class) {
-        scoreA = scoreA + 30;
-      }
-    })
-    resultsSTG.gamerBKVals.forEach((gamerBK, i) => {
-      if (gamerBK == gameState?.prompt.class) {
-        scoreA = scoreB + 30;
-      }
-    })
+    // resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
+    //   if (gamerAK == gameState?.prompt.class) {
+    //     scoreA = scoreA + 30;
+    //   }
+    // })
+    // resultsSTG.gamerBKVals.forEach((gamerBK, i) => {
+    //   if (gamerBK == gameState?.prompt.class) {
+    //     scoreA = scoreB + 30;
+    //   }
+    // })
 
     // weighted votes based on score 90 possible above
     const totalVotes = resultsSTG.votes.length;
-    const cumPoints = 90/0.3;
-    const voteValue = (cumPoints * 0.7)/totalVotes;
+    const cumPoints = 90 / 0.3;
+    const voteValue = (cumPoints * 0.7) / totalVotes;
     resultsSTG.votes.forEach((vote, i) => {
-      if (vote == GamerChoice.GamerA) voteCountA+=voteValue;
-      if (vote == GamerChoice.GamerB) voteCountB+=voteValue;
+      if (vote == GamerChoice.GamerA) {
+        scoreA += voteValue;
+        return
+      }
+      else if (vote == GamerChoice.GamerB) {
+        scoreB += voteValue;
+        return;
+      }
+      else {
+        return
+      }
     })
 
-    scoreA += voteValue;
-    scoreB += voteValue;
-    
     if (scoreA > scoreB) {
       winner = GamerChoice.GamerA
       console.log("WINNER A")
@@ -85,18 +90,19 @@ export default function DashboardLayout({
       console.log("NEITHER");
     }
     console.log(scoreA, scoreB)
-    
-    const results: Results  = {
+
+    const results: Results = {
       gameState: gameState!,
       innerResult: resultsSTG,
-      winner: winner, 
+      winner: winner,
       score: {
         [GamerChoice.GamerA]: scoreA, [GamerChoice.GamerB]: scoreB,
         [GamerChoice.Neither]: 0
       }
     }
     setResults(results);
-    console.log({results})
+    console.log({ results })
+    await sleep(1000);
     router.push('/results');
   }
 

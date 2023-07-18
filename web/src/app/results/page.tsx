@@ -34,8 +34,8 @@ export default function Results() {
     })
   }
   useEffect(() => {
-    if (!results) return;
-    let clientArray = Array.from(results.gameState.clients)
+    if (!results || !gameState) return;
+    let clientArray = Array.from(gameState.clients)
     let audienceCount = 0;
     clientArray.filter((client) => {
       if (client[1] == ClientType.Audience) {
@@ -60,7 +60,7 @@ export default function Results() {
           y: height / 2,
         }}
       /> */}
-      {results &&
+      {results && 
         <div className="flex flex-col items-center justify-center">
           <div className="flex flex-col md:flex-row items-center justify-center">
             <div className="flex flex-col w-full h-full">

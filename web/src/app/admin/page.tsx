@@ -1,4 +1,5 @@
 'use client'
+import { useToast } from "@/hooks/useToast";
 import { ClientMessageType, ClientTypeDTO, GameState, IClientTypeDTO, IGameState, IPing, Ping, ServerMessageType } from "@/lib/schemas";
 import { gameStateAtom, userStateAtom } from "@/lib/store";
 import { deserialize, getDTOBuffer } from "@/utils/bopUtils";
@@ -9,6 +10,7 @@ export default function Admin() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const [user, setUser] = useAtom(userStateAtom);
   const [noGameState, setNoGameState] = useState(false);
+  const setToast = useToast();
   
   function handlePing(msg: IPing) {
     let sendPing = Ping.encode({
@@ -100,6 +102,7 @@ export default function Admin() {
           onClick={(e) => {
             e.preventDefault();
             handleStartGame();
+            setToast("Game restarted!")
           }}
           className="btn">Start/Restart Game</button>
         {/* <button
