@@ -1,30 +1,32 @@
 'use client'
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { ClientType, GameState, GamerChoice, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, ServerMessageType, Stage } from "@/lib/schemas";
-import { resultsAtom, gameStateAtom, userStateAtom } from "@/lib/store";
+import { resultsAtom, gameStateAtom, userStateAtom, audienceCountAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 import { useTimer } from "react-timer-hook";
+import { useToast } from "@/hooks/useToast";
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export interface Results {
   innerResult: IResultsSTG,
   gameState: IGameState,
-  winner: GamerChoice,
-  score: Record<GamerChoice, number>,
 }
+
 export default function DashboardLayout({
   children, // will be a page or nested layout
 }: {
   children: React.ReactNode
 }) {
-  const [audience, setAudience] = useState(0);
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
+  const gameState2 = useAtomValue(gameStateAtom);
   const [user, setUser] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
   const [voteCount, setVoteCount] = useState(0);
+  const setToast = useToast();
+  const audience = useAtomValue(audienceCountAtom);
 
   const {
     seconds,
@@ -38,72 +40,6 @@ export default function DashboardLayout({
     console.log("FROM LAYOUT NEW GAME STATE", { gameState });
     setGameState(gameState);
     restart(new Date(Number(gameState.stageFinishTime)));
-
-  }
-  async function handleResults(resultsSTG: IResultsSTG) {
-    console.log({ resultsSTG })
-
-
-    let scoreA = 0;
-    let scoreB = 0;
-    let winner = 0;
-
-    // resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
-    //   if (gamerAK == gameState?.prompt.class) {
-    //     scoreA = scoreA + 30;
-    //   }
-    // })
-    // resultsSTG.gamerBKVals.forEach((gamerBK, i) => {
-    //   if (gamerBK == gameState?.prompt.class) {
-    //     scoreA = scoreB + 30;
-    //   }
-    // })
-
-    // weighted votes based on score 90 possible above
-    const totalVotes = resultsSTG.votes.length;
-    const cumPoints = 90 / 0.3;
-    const voteValue = (cumPoints * 0.7) / totalVotes;
-    resultsSTG.votes.forEach((vote, i) => {
-      if (vote == GamerChoice.GamerA) {
-        scoreA += voteValue;
-        return
-      }
-      else if (vote == GamerChoice.GamerB) {
-        scoreB += voteValue;
-        return;
-      }
-      else {
-        return
-      }
-    })
-
-    if (scoreA > scoreB) {
-      winner = GamerChoice.GamerA
-      console.log("WINNER A")
-    }
-    else if (scoreA < scoreB) {
-      winner = GamerChoice.GamerB;
-      console.log("WINNER B")
-    }
-    else {
-      winner = GamerChoice.Neither;
-      console.log("NEITHER");
-    }
-    console.log(scoreA, scoreB)
-
-    const results: Results = {
-      gameState: gameState!,
-      innerResult: resultsSTG,
-      winner: winner,
-      score: {
-        [GamerChoice.GamerA]: scoreA, [GamerChoice.GamerB]: scoreB,
-        [GamerChoice.Neither]: 0
-      }
-    }
-    setResults(results);
-    console.log({ results })
-    await sleep(1000);
-    router.push('/results');
   }
 
   const message = async (event: MessageEvent<Blob>) => {
@@ -115,18 +51,15 @@ export default function DashboardLayout({
       case ServerMessageType.GameState:
         handleGameState(GameState.decode(data));
         return;
-      case ServerMessageType.ResultsSTG:
-        handleResults(ResultsSTG.decode(data));
-        return;
       case ServerMessageType.VoteUpdate:
         setVoteCount(voteCount + 1);
         return;
       case ServerMessageType.Restart:
-        // TODO: Toast
+        setToast("Restarting game");
         router.push("/");
         return;
       case ServerMessageType.NoGameState:
-        // TODO: toast
+        setToast("No game found redirecting to home page");
         router.push('/');
         return;
     }
@@ -150,6 +83,7 @@ export default function DashboardLayout({
   }
 
   const matches = useMediaQuery("(min-width: 343px)");
+
   useEffect(() => {
     const openConnection = () => {
       console.log('OPENED CONN');
@@ -171,18 +105,45 @@ export default function DashboardLayout({
     }
   }, [])
 
+
+  // Usecallback doesnt work in this situation since it needs to affect both handleResults and onMessage not just one
+  // UseEffect used to curry the value of gameState without it getting stale
   useEffect(() => {
-    if (!gameState) return;
-    let clientArray = Array.from(gameState.clients)
-    let audienceCount = 0;
-    clientArray.filter((client) => {
-      if (client[1] == ClientType.Audience) {
-        audienceCount++;
+    if (!gameState || !window.SCRIBBLE_SOCK) return;
+
+
+    async function handleResults(resultsSTG: IResultsSTG) {
+      console.log({ resultsSTG, gameState })
+
+      const results: Results = {
+        gameState: gameState!,
+        innerResult: resultsSTG,
       }
-    })
-    console.log("AUDIENCE COUNT !!!", audienceCount);
-    setAudience(audienceCount); // minus two for gamers
-  }, [gameState])
+      setResults(results);
+      console.log({ results })
+      await sleep(1000);
+      router.push('/results');
+    }
+
+
+    const message = async (event: MessageEvent<Blob>) => {
+      const { type, data } = await deserialize(event);
+      switch (type) {
+        case ServerMessageType.ResultsSTG:
+          console.log({ gameState });
+          await handleResults(ResultsSTG.decode(data)!);
+          return;
+      }
+    }
+    window.SCRIBBLE_SOCK.addEventListener('message', message);
+
+    return () => {
+      window.SCRIBBLE_SOCK.removeEventListener('message', message);
+    }
+
+  }, [gameState]);
+
+
 
   return (
     <section className="flex flex-col item-center lg:justify-center">

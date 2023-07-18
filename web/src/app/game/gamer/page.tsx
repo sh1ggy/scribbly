@@ -22,10 +22,8 @@ export default function Gamer() {
   const { canvasRef, clear } = useDraw(createLine, cursorUp);
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState(0);
 
   const [gameState, setGameState] = useAtom(gameStateAtom);
-  const [judgement, setJudgement] = useState(false);
 
   const router = useRouter();
 
@@ -40,8 +38,7 @@ export default function Gamer() {
 
   function createLine({ prevPoint, currentPoint, ctx }: Draw) {
     if (!gameState || gameState.stage != Stage.Drawing) return
-    console.log("DRAW LINE");
-    console.log({ gameState });
+    console.log("Drawing Point");
     drawLine({ prevPoint, currentPoint, ctx, color });
     const cursorLocation = CursorLocation.encode({
       currentPoint: {
@@ -52,31 +49,7 @@ export default function Gamer() {
     window.SCRIBBLE_SOCK.send(getDTOBuffer(cursorLocation, ClientMessageType.CursorLocation));
   }
 
-  useLayoutEffect(() => {
-    const calcResize = () => {
-      const canvasParentDims = canvasContainerRef.current?.getBoundingClientRect();
-      if (!canvasParentDims) return
-      setCanvasSize(Math.min(canvasParentDims?.width, canvasParentDims?.height) * 0.7);
-    }
-    calcResize();
-
-    window
-      .addEventListener('resize', calcResize);
-    return () => {
-      window
-        .removeEventListener('resize', calcResize)
-    }
-  }, []);
-
-
-  useEffect(() => {
-    if (gameState?.stage == Stage.Voting) setJudgement(true);
-    else if (!gameState || gameState.stage != Stage.Drawing) return;
-    console.log(gameState);
-  }, [gameState])
-
-
-  function handleClear() {
+  function handleClearButton() {
     const sendClear = new Uint8Array();
     window.SCRIBBLE_SOCK.send(getDTOBuffer(sendClear, ClientMessageType.Clear))
     console.log("CLEAR COMPLETE")
@@ -108,7 +81,7 @@ export default function Gamer() {
             <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none'
               onClick={() => {
                 clear();
-                handleClear()
+                handleClearButton()
               }
               }>
               Clear canvas

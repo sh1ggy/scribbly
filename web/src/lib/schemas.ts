@@ -1451,9 +1451,7 @@ export class FinishStroke implements IFinishStroke {
 
 export const AUDIENCE_LOBBY_TIME: number = 10000;
 
-export const DRAWING_TIME: number = 120000;
-
-export const RESULTS_DRUMROLL: number = 5000;
+export const DRAWING_TIME: number = 20000;
 
 export const VOTING_TIME: number = 5000;
 
