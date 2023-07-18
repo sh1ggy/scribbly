@@ -75,7 +75,7 @@ async fn handle_admin_message(
 
                 // unscope the mutex before await because the future can be across 2 threads
                 {
-                    let mut game = conn.game_ref.lock().unwrap();
+                    let mut game = conn.inner.game_ref.lock().unwrap();
                     let drawings = [Vec::new(), Vec::new()];
                     let current_time = SystemTime::now()
                         .duration_since(UNIX_EPOCH)
@@ -98,7 +98,7 @@ async fn handle_admin_message(
                 let msg = get_dto_binary(e, api::ServerMessageType::Restart as u32);
                 println!("Sending start message {:?} bytes", msg);
                 let msg = Message::Binary(msg);
-                conn.broadcast_message(&msg).await;
+                conn.inner.broadcast_message(&msg).await;
                 println!("Starting game");
             } else {
                 println!("Unauthorized start from {:?}", conn.client_id);
@@ -131,7 +131,7 @@ async fn handle_game_message(
             if let Some(draw_update) = draw_update {
                 let msg = get_dto_binary(draw_update, api::ServerMessageType::DrawUpdate as u32);
                 let msg = Message::Binary(msg);
-                conn.broadcast_message(&msg).await;
+                conn.inner.broadcast_message(&msg).await;
             }
         }
 
@@ -140,7 +140,7 @@ async fn handle_game_message(
             conn.client_type = ClientType::Admin;
         }
         client::ClientMessageType::FinishStroke => {
-            let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+            let Some(game) = &mut *conn.inner.game_ref.lock().unwrap() else {
                 return;
             };
             let ClientType::Gamer(order) = conn.client_type else {
@@ -154,7 +154,7 @@ async fn handle_game_message(
             let mut msg = None;
 
             {
-                let mut game_option = conn.game_ref.lock().unwrap();
+                let mut game_option = conn.inner.game_ref.lock().unwrap();
                 let Some(game) = &mut *game_option else {
                 return;
             };
@@ -174,13 +174,13 @@ async fn handle_game_message(
             }
 
             if (msg.is_some()) {
-                conn.broadcast_message(&msg.unwrap()).await;
+                conn.inner.broadcast_message(&msg.unwrap()).await;
             }
         }
         client::ClientMessageType::Vote => {
             let vote = client::Vote::deserialize(data).unwrap();
             {
-                let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+                let Some(game) = &mut *conn.inner.game_ref.lock().unwrap() else {
                     return;
                 };
                 let ClientType::Audience = conn.client_type else {
@@ -191,7 +191,7 @@ async fn handle_game_message(
                 game.votes.push(vote);
             }
 
-            conn.broadcast_message(&Message::Binary(get_dto_binary(
+            conn.inner.broadcast_message(&Message::Binary(get_dto_binary(
                 Empty {},
                 api::ServerMessageType::VoteUpdate as u32,
             )))
@@ -202,7 +202,7 @@ async fn handle_game_message(
 }
 
 fn save_coord_to_game_state(coord: api::Coord, conn: &mut ClientConnection) -> Option<DrawUpdate> {
-    let Some(game) = &mut *conn.game_ref.lock().unwrap() else {
+    let Some(game) = &mut *conn.inner.game_ref.lock().unwrap() else {
         return None;
     };
     let ClientType::Gamer(order) = conn.client_type else {

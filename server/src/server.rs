@@ -31,7 +31,7 @@ use crate::{
         client, common,
     },
     ml::{self, PlaceholderModel},
-    server::client_connection::send_gamestate_dto,
+    server::client_connection::InnerConn,
 };
 
 use handlers::{get_dto_binary, handle_client_message};
@@ -101,19 +101,26 @@ impl<'a> Server<'a> {
 
         // Tokio threads need an async task in them for them to be considerd async,
         tokio::spawn(async move {
+            let mut inner = InnerConn{
+                clients_ref: cons_ref.clone(),
+                game_ref: game_ref.clone(),
+            };
             loop {
                 let msg = internal_rx.recv().await.unwrap();
-                handle_internal_msg(msg, game_ref.clone(), cons_ref.clone()).await;
+                handle_internal_msg(msg, &mut inner).await;
             }
         });
 
         while let Ok((stream, _)) = listener.accept().await {
-            let cc = ClientConnection {
+            let inner = InnerConn {
                 clients_ref: cons_ref_clone.clone(),
+                game_ref: game_ref_clone.clone(),
+            };
+            let cc = ClientConnection {
                 client_type: ClientType::Unknown,
                 client_id: 0,
-                game_ref: game_ref_clone.clone(),
                 internal_comms: internal_tx.clone(),
+                inner,
             };
 
             tokio::spawn(accept_connection(stream, cc));
@@ -121,62 +128,56 @@ impl<'a> Server<'a> {
     }
 }
 
-pub type kVals = [Vec<u32>; 2];
-
 use std::str;
-async fn handle_internal_msg<'a>(
-    msg: InternalMessage,
-    game_ref: Arc<Mutex<Option<GameState>>>,
-    clients_ref: Arc<Mutex<Clients>>,
-) {
+async fn handle_internal_msg<'a>(msg: InternalMessage, inner: &mut InnerConn) {
     match msg {
         InternalMessage::CountDownLobby => {
             println!("TRansitioning to AudienceLobby and waiting");
             {
-                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     game.stage = api::Stage::AudienceLobby;
                     game.last_stage_time = time();
                 }
-                send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
+                inner.send_gamestate_dto().await;
             }
 
             tokio::time::sleep(Duration::from_millis(common::AUDIENCE_LOBBY_TIME as u64)).await;
 
             println!("TRansitioning to Drawing");
             {
-                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     game.stage = api::Stage::Drawing;
                     game.last_stage_time = time();
                 }
             }
-            send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
+
+            inner.send_gamestate_dto().await;
 
             println!("Waiting for drawing to finish");
 
             tokio::time::sleep(Duration::from_millis(common::DRAWING_TIME as u64)).await;
 
             {
-                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     game.stage = api::Stage::Voting;
                     game.last_stage_time = time();
                 }
             }
+            inner.send_gamestate_dto().await;
 
-            send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
             // Collect all votes
 
             tokio::time::sleep(Duration::from_millis(common::VOTING_TIME as u64)).await;
             {
-                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     game.stage = api::Stage::Judging;
                     game.last_stage_time = time();
                 }
             }
 
-            send_gamestate_dto_cring(game_ref.clone(), clients_ref.clone()).await;
+            inner.send_gamestate_dto().await;
 
-            finalise_game(game_ref.clone()).await;
-
+            finalise_game(inner.game_ref.clone()).await;
 
             let gamerA = Vec::new();
             let gamerB = Vec::new();
@@ -188,32 +189,29 @@ async fn handle_internal_msg<'a>(
 
             #[cfg(windows)]
             {
+                let output = Command::new("C:/Users/anhad/miniconda3/envs/ml/python.exe ")
+                    .args(&["d:/scribbly/server/scribbly.py"])
+                    .output()
+                    .await
+                    .unwrap(); //Handle error here
 
-            let output = Command::new("C:/Users/anhad/miniconda3/envs/ml/python.exe ")
-                .args(&["d:/scribbly/server/scribbly.py"])
-                .output()
-                .await
-                .unwrap(); //Handle error here
+                let output = str::from_utf8(&output.stdout).unwrap();
+                println!("Got Ml Result: {}", output);
 
-            let output = str::from_utf8(&output.stdout).unwrap();
-            println!("Got Ml Result: {}", output);
+                let data: [Vec<f32>; 2] = serde_json::from_str(output).unwrap();
 
-            let data: [Vec<f32>; 2] = serde_json::from_str(output).unwrap();
-
-            let gamerA = data[0]
-                .iter()
-                .map(|x| x.round() as u32)
-                .collect::<Vec<u32>>();
-            let gamerB = data[1]
-                .iter()
-                .map(|x| x.round() as u32)
-                .collect::<Vec<u32>>();
-
-
+                let gamerA = data[0]
+                    .iter()
+                    .map(|x| x.round() as u32)
+                    .collect::<Vec<u32>>();
+                let gamerB = data[1]
+                    .iter()
+                    .map(|x| x.round() as u32)
+                    .collect::<Vec<u32>>();
             }
 
             {
-                if let Some(game) = &mut *game_ref.lock().unwrap() {
+                if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     let votes_clone = (&game.votes.clone());
                     let result = api::ResultsSTG {
                         id: game.id,
@@ -225,8 +223,7 @@ async fn handle_internal_msg<'a>(
                     msg = Message::Binary(data);
                 }
             }
-            broadcast_message(clients_ref, &msg).await;
-
+            inner.broadcast_message(&msg).await;
         }
     }
 }
@@ -309,82 +306,7 @@ async fn save_results_to_csv(
                 return;
             }
         }
-
     }
-}
-
-pub async fn broadcast_message(clients_ref: Arc<Mutex<Clients>>, msg: &Message) {
-    let clients = clients_ref.lock().unwrap();
-    for (id, client) in clients.iter() {
-        let msg = msg.clone();
-        // client.send(msg).unwrap();
-        if let Err(e) = client.send(msg) {
-            println!("Error sending to client: {:#}, id: {}", e, id);
-        }
-    }
-}
-
-async fn send_gamestate_dto_cring<'a>(
-    game_ref: Arc<Mutex<Option<GameState>>>,
-    clients_ref: Arc<Mutex<Clients>>,
-) {
-    let e = api::Empty {};
-
-    let mut msg = Message::Binary(get_dto_binary(
-        e,
-        api::ServerMessageType::NoGameState as u32,
-    ));
-
-    if let Some(game) = &mut *game_ref.lock().unwrap() {
-        let mut drawings: Vec<Drawing> = Vec::new();
-        let game_drawings = game.drawings.clone();
-        for drawing in game_drawings.iter() {
-            let mut drawingDto = Drawing {
-                strokes: Vec::new(),
-            };
-            for stroke in drawing.iter() {
-                // Idk why we need a ref here
-                let saved = &stroke;
-                drawingDto.strokes.push(SliceWrapper::Cooked(saved));
-            }
-
-            drawings.push(drawingDto);
-        }
-
-        let clients = game
-            .clients
-            .clone()
-            .into_iter()
-            .map(|(id, ctype)| (id, ctype.into()))
-            .collect();
-        let current_time = time();
-
-        let stage_timing = match game.stage {
-            api::Stage::Drawing => common::DRAWING_TIME,
-            api::Stage::AudienceLobby => common::AUDIENCE_LOBBY_TIME,
-            api::Stage::Voting => common::VOTING_TIME,
-            _ => 0,
-        };
-
-        let stage_finish_time = (game.last_stage_time + (stage_timing as u128)) as u64;
-
-        let prompt = api::Prompt {
-            class: game.prompt.class,
-            name: &game.prompt.name.clone(),
-        };
-        let gamestate_dto = api::GameState {
-            stage_finish_time,
-            id: game.id,
-            clients,
-            drawings,
-            stage: game.stage,
-            prompt,
-        };
-        let bin = get_dto_binary(gamestate_dto, api::ServerMessageType::GameState as u32);
-        msg = Message::Binary(bin);
-    }
-
-    broadcast_message(clients_ref, &msg).await;
 }
 
 fn time() -> u128 {
@@ -420,7 +342,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
     let msg = Message::Binary(buf);
     ws_sender.send(msg).await?;
 
-    send_gamestate_dto(&mut conn).await;
+    conn.inner.send_gamestate_dto().await;
 
     let ctype = conn.client_type.clone();
     let ctype_dto = ctype.to_dto(conn.client_id);
@@ -437,7 +359,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
                     Some(msg)=>{
                         let msg = msg?;
                         if msg.is_text() {
-                            conn.broadcast_message(&msg).await;
+                            conn.inner.broadcast_message(&msg).await;
                             let txt = msg.to_text().unwrap();
                             println!("Got ws message: {}", txt);
 

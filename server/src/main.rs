@@ -1,9 +1,6 @@
 use tokio::io::{AsyncWriteExt, BufWriter};
 
-use crate::{
-    ml::PlaceholderModel,
-    server::{kVals, Server},
-};
+use crate::{ml::PlaceholderModel, server::Server};
 use tokio::process::Command;
 
 mod gen_schemas;
