@@ -318,11 +318,11 @@ async fn save_results_to_csv(
 
 pub async fn broadcast_message(clients_ref: Arc<Mutex<Clients>>, msg: &Message) {
     let clients = clients_ref.lock().unwrap();
-    for (_, client) in clients.iter() {
+    for (id, client) in clients.iter() {
         let msg = msg.clone();
         // client.send(msg).unwrap();
         if let Err(e) = client.send(msg) {
-            println!("Error sending from client: {:?}", e);
+            println!("Error sending to client: {:#}, id: {}", e, id);
         }
     }
 }

@@ -7,13 +7,26 @@ This application is a [skribblio](https://skribbl.io/)/[QuickDraw](https://quick
 
 
 ## Stack
-- [NextJS 13](https://nextjs.org/) with app router was our chosen ReactJS front-end framework, using [TailwindCSS](https://tailwindcss.com/) with [DaisyUI](https://daisyui.com/) as a plugin for styles
+- [NextJS 13](https://nextjs.org/) with app router was our chosen ReactJS front-end framework, using [TailwindCSS](https://tailwindcss.com/) with [DaisyUI](https://daisyui.com/) as a plugin for styles. Used [Jotai](https://jotai.org/) for global state management.
 - [Rust](https://www.rust-lang.org/), using [tokio](https://github.com/tokio-rs/tokio) and [tungstenite](https://github.com/snapview/tungstenite-rs)
 - [Bebop](https://github.com/betwixt-labs/bebop) typesafe binary serialisation
+- [Pytorch](https://pytorch.org/) for machine learning and running the model
+
+
+## How to run (For Code Network organizers)
+- Go to the [website](https://scribbly-alpha.vercel.app/)
 
 ## Deployment Prerequisites
 ### Development Testing 
 - Host your own web socket server using `ngrok` which should look like the following `wss://{XXX-XXX-XXX...}.ngrok-free.app/` make ENV value `NEXT_PUBLIC_WS` 
 - Do the same using `ngrok` again to host the front-end web component
 - Run the project using `pnpm dev` 
+
+## TODO 
+- [ ] Refactor rust   
+- [ ] Use probability values instead of k values in ml
+- [ ] Fix admin portal, add toast that it worked
+- [ ] Clear canvas
+- [ ] Find outsourced ai host like huggingface,  
+
 
