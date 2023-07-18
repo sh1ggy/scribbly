@@ -165,8 +165,6 @@ async fn handle_internal_msg<'a>(msg: InternalMessage, inner: &mut InnerConn) {
             }
             inner.send_gamestate_dto().await;
 
-            // Collect all votes
-
             tokio::time::sleep(Duration::from_millis(common::VOTING_TIME as u64)).await;
             {
                 if let Some(game) = &mut *inner.game_ref.lock().unwrap() {

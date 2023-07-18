@@ -23,12 +23,13 @@ This application is a [skribblio](https://skribbl.io/)/[QuickDraw](https://quick
 - Run the project using `pnpm dev` 
 
 ## TODO 
-- [ ] Refactor rust   
-- [ ] Fix admin portal, add toast that it worked
+- [x] Refactor rust   
+- [x] Fix admin portal, add toast that it worked
 - [x] Clear canvas
 - [ ] End to end testing that votes acutally work
 
 ## Future
+- [ ] TODO: completely flush out tcp websokcet connections on server side on reset (except admin)
 - [ ] Refac for toastProvider to jotai
 - [ ] Use probability values instead of k values in ml
 - [ ] Find outsourced ai host like huggingface,  
