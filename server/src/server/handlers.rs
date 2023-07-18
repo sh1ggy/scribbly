@@ -146,6 +146,7 @@ async fn handle_game_message(
                 return ;
             };
             let drawing = &mut game.drawings[order as usize];
+            // Instead of pushing a new vec, finish using the older vec, 
             drawing.push(Vec::new());
         }
         client::ClientMessageType::Clear => {
@@ -164,6 +165,7 @@ async fn handle_game_message(
                 },
                 api::ServerMessageType::Clear as u32,
             ));
+            conn.broadcast_message(&msg).await;
         }
         client::ClientMessageType::Vote => {
             let vote = client::Vote::deserialize(data).unwrap();
