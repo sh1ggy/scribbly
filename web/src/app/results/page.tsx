@@ -1,6 +1,6 @@
 'use client'
 import { ClientType, GamerChoice, ICoord } from "@/lib/schemas";
-import { resultsAtom } from "@/lib/store";
+import { gameStateAtom, resultsAtom } from "@/lib/store";
 import { drawLine } from "@/utils/drawLine";
 import { useAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
@@ -11,13 +11,14 @@ export default function Results() {
   const color = '#000'
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [results, setResults] = useAtom(resultsAtom);
+  const [gameState, setGameState] = useAtom(gameStateAtom)
   const [audience, setAudience] = useState(0);
 
   function handleDrawResult() {
     if (!results) return;
     console.log(results.gameState.drawings)
     results.gameState.drawings.forEach((drawing, i) => {
-      let canvas = i == results.winner && canvasRef.current
+      let canvas = GamerChoice[i] == GamerChoice[results.winner] && canvasRef.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -76,12 +77,12 @@ export default function Results() {
           <div className="stats lg:stats-horizontal shadow bg-slate-800">
             <div className="stat">
               <div className="stat-title">Audience</div>
-              <div className="stat-value">{`${results?.innerResult.votes.length} / ${audience}`}</div>
+              <div className="stat-value">{`${results.innerResult.votes.length} / ${audience}`}</div>
               <div className="stat-desc">/ of people that voted</div>
             </div>
             <div className="stat">
               <div className="stat-title">Prompt</div>
-              <div className="stat-value">{results.gameState.prompt.name}</div>
+              <div className="stat-value">{gameState?.prompt.name}</div>
               <div className="stat-desc">What had to be drawn</div>
             </div>
           </div>

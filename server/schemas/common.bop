@@ -1,7 +1,7 @@
 // const uint32 AUDIENCE_LOBBY_TIME = 30000;
 const uint32 AUDIENCE_LOBBY_TIME = 10000;
 // const uint32 AUDIENCE_LOBBY_TIME = 30;
-const uint32 DRAWING_TIME = 20000;
+const uint32 DRAWING_TIME = 120000;
 // const uint32 DRAWING_TIME = 5000;
 const uint32 RESULTS_DRUMROLL = 5000;
 const uint32 VOTING_TIME = 5000;

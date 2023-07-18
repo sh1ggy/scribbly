@@ -49,7 +49,6 @@ export default function DashboardLayout({
     let scoreB = 0;
     let winner = 0;
 
-
     resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
       if (gamerAK == gameState?.prompt.class) {
         scoreA = scoreA + 30;
@@ -168,7 +167,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!gameState) return;
-    let clientArray = Array.from(gameState?.clients)
+    let clientArray = Array.from(gameState.clients)
     let audienceCount = 0;
     clientArray.filter((client) => {
       if (client[1] == ClientType.Audience) {

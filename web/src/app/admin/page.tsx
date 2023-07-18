@@ -59,9 +59,6 @@ export default function Admin() {
         case ServerMessageType.Ping:
           handlePing(Ping.decode(data));
           return;
-        case ServerMessageType.Restart: 
-          handleStartGame();
-          return;
         case ServerMessageType.GameState:
           handleGameState(GameState.decode(data));
           setNoGameState(false);

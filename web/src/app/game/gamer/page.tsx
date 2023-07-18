@@ -76,6 +76,12 @@ export default function Gamer() {
   }, [gameState])
 
 
+  function handleClear() {
+    const sendClear = new Uint8Array();
+    window.SCRIBBLE_SOCK.send(getDTOBuffer(sendClear, ClientMessageType.FinishStroke))
+    console.log("CLEAR COMPLETE")
+  }
+
   return (
     // The absolute value offsets have to be absolutely correct otherwise the scrollbars appear, calc based on header + Link
     <div ref={canvasContainerRef} className='
@@ -99,7 +105,12 @@ export default function Gamer() {
               width={CANVAS_SIZE}
               className={`bg-white ${gameState?.stage != Stage.Drawing && "cursor-not-allowed pointer-events-none"}`}
             />
-            <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none' onClick={clear}>
+            <button type='button' className='btn hover:bg-slate-500 border-none transition-colors p-2 w-full rounded-b-md rounded-t-none'
+              onClick={() => {
+                clear
+                handleClear()
+              }
+              }>
               Clear canvas
             </button>
           </>
