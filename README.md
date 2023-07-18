@@ -12,15 +12,19 @@ This application is a [skribblio](https://skribbl.io/)/[QuickDraw](https://quick
 - [Bebop](https://github.com/betwixt-labs/bebop) typesafe binary serialisation
 - [Pytorch](https://pytorch.org/) for machine learning and running the model
 
-
-## How to run (For Code Network organizers)
-- Go to the [website](https://scribbly-alpha.vercel.app/)
-
 ## Deployment Prerequisites
 ### Development Testing 
 - Host your own web socket server using `ngrok` which should look like the following `wss://{XXX-XXX-XXX...}.ngrok-free.app/` make ENV value `NEXT_PUBLIC_WS` 
 - Do the same using `ngrok` again to host the front-end web component
 - Run the project using `pnpm dev` 
+
+## How to Run (For Code Network organizers)
+For any unforeseen issue, please contact us directly. Also please note that there can only be one game running at a time. 
+
+- Go to the [website](https://scribbly-alpha.vercel.app/)
+- Prior to the game starting, have staff go to the admin page by appending "admin" to the URL as follows [https://scribbly-alpha.vercel.app/admin](https://scribbly-alpha.vercel.app/admin)
+- The admin page will display the WS server URL as well as indicate if there's any left over clients and state from the previous game. Please press "Start/Restart Game" to prepare for a fresh game. Note that doing this removes all players and removes all game state for the active game. ![](./imgs/admin.png). 
+- After this has been done, you can navigate back to the home page to display the URL to willing participants ![](./imgs//home.png). 
 
 ## TODO 
 - [x] Refactor rust   
@@ -28,7 +32,7 @@ This application is a [skribblio](https://skribbl.io/)/[QuickDraw](https://quick
 - [x] Clear canvas
 - [ ] End to end testing that votes acutally work
 
-## Future
+### Future
 - [ ] TODO: completely flush out tcp websokcet connections on server side on reset (except admin)
 - [ ] Refac for toastProvider to jotai
 - [ ] Use probability values instead of k values in ml
