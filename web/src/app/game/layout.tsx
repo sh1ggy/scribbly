@@ -3,14 +3,16 @@ import { useState, useEffect, useMemo } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { ClientType, ClientTypeDTO, GameState, GamerChoice, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, STgResults, ServerMessageType, Stage } from "@/lib/schemas";
-import { finalState, gameStateAtom, resultsAtom, userStateAtom, winnerAtom } from "@/lib/store";
+import { ClientType, GameState, GamerChoice, IGameState, IPing, IResultsSTG, Ping, ResultsSTG, ServerMessageType, Stage } from "@/lib/schemas";
+import { resultsAtom, gameStateAtom, userStateAtom } from "@/lib/store";
 import { deserialize } from "@/utils/bopUtils";
 import { useTimer } from "react-timer-hook";
 
-export interface ResultsSum {
-  result: IResultsSTG,
-  newGameState: IGameState
+export interface Results {
+  innerResult: IResultsSTG,
+  gameState: IGameState,
+  winner: GamerChoice,
+  score: Record<GamerChoice, number>,
 }
 export default function DashboardLayout({
   children, // will be a page or nested layout
@@ -22,8 +24,6 @@ export default function DashboardLayout({
   const [gameState, setGameState] = useAtom(gameStateAtom);
   const [user, setUser] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
-  const [winner, setWinner] = useAtom(winnerAtom);
-  const [finalResult, setFinalResult] = useAtom(finalState);
   const [voteCount, setVoteCount] = useState(0);
 
   const {
@@ -41,14 +41,14 @@ export default function DashboardLayout({
 
   }
   function handleResults(resultsSTG: IResultsSTG) {
-    // if (!gameState) return;
     console.log({ resultsSTG })
 
     let voteCountA = 0;
     let voteCountB = 0;
-
     let scoreA = 0;
     let scoreB = 0;
+    let winner = 0;
+
 
     resultsSTG.gamerAKVals.forEach((gamerAK, i) => {
       if (gamerAK == gameState?.prompt.class) {
@@ -60,40 +60,44 @@ export default function DashboardLayout({
         scoreA = scoreB + 30;
       }
     })
+
+    // weighted votes based on score 90 possible above
+    const totalVotes = resultsSTG.votes.length;
+    const cumPoints = 90/0.3;
+    const voteValue = (cumPoints * 0.7)/totalVotes;
     resultsSTG.votes.forEach((vote, i) => {
-      if (vote == GamerChoice.GamerA) voteCountA++;
-      if (vote == GamerChoice.GamerB) voteCountB++;
+      if (vote == GamerChoice.GamerA) voteCountA+=voteValue;
+      if (vote == GamerChoice.GamerB) voteCountB+=voteValue;
     })
-    if (voteCountA > voteCountB) {
-      scoreA = scoreA + 50
-    }
-    else {
-      scoreB = scoreB + 50
-    }
-    let winner = 0;
+
+    scoreA += voteValue;
+    scoreB += voteValue;
+    
     if (scoreA > scoreB) {
-      // setWinner(GamerChoice.GamerA)
       winner = GamerChoice.GamerA
       console.log("WINNER A")
     }
-    else {
-      // setWinner(GamerChoice.GamerB)
+    else if (scoreA < scoreB) {
       winner = GamerChoice.GamerB;
       console.log("WINNER B")
     }
-    console.log(scoreA, scoreB)
-    setWinner(winner)
-    console.log({winner})
-    const sum: ResultsSum  = {
-      newGameState: gameState!,
-      result: resultsSTG,
-
+    else {
+      winner = GamerChoice.Neither;
+      console.log("NEITHER");
     }
-    // setGameState(gameState);
-    // setResults(resultsSTG);
-    setFinalResult(sum);
-
-    console.log({sum})
+    console.log(scoreA, scoreB)
+    
+    const results: Results  = {
+      gameState: gameState!,
+      innerResult: resultsSTG,
+      winner: winner, 
+      score: {
+        [GamerChoice.GamerA]: scoreA, [GamerChoice.GamerB]: scoreB,
+        [GamerChoice.Neither]: 0
+      }
+    }
+    setResults(results);
+    console.log({results})
     router.push('/results');
   }
 

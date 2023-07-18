@@ -2,7 +2,7 @@
 
 import { atom } from 'jotai'
 import { ClientType, Drawing, GamerChoice, IClientTypeDTO, IGameState, IResultsSTG, Stage } from './schemas';
-import { ResultsSum } from '@/app/game/layout';
+import { Results } from '@/app/game/layout';
 
 const initUser: IClientTypeDTO = {
     id: 0,
@@ -13,8 +13,4 @@ const initUser: IClientTypeDTO = {
 export const userStateAtom = atom(initUser);
 // Cant set through javascript, must be done in jsx so dont bother not using global window
 export const gameStateAtom = atom<null | IGameState>(null);
-
-export const resultsAtom = atom<null | IResultsSTG>(null);
-
-export const winnerAtom = atom<null | GamerChoice>(null);
-export const finalState = atom<null | ResultsSum>(null);
+export const resultsAtom = atom<null | Results>(null);

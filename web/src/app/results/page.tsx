@@ -1,32 +1,23 @@
 'use client'
-import { ClientType, GameState, GamerChoice, ICoord, IGameState, ServerMessageType } from "@/lib/schemas";
-import { finalState, gameStateAtom, resultsAtom, winnerAtom } from "@/lib/store";
+import { ClientType, GamerChoice, ICoord } from "@/lib/schemas";
+import { resultsAtom } from "@/lib/store";
 import { drawLine } from "@/utils/drawLine";
 import { useAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
-import { deserialize } from "@/utils/bopUtils";
-import { useContainerSize } from "@/hooks/useContainerSize";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 // import Confetti from 'react-confetti'
-import { useWindowSize } from "@/hooks/useWindowSize";
 
 export default function Results() {
-  const [gameState, setGameState] = useAtom(gameStateAtom);
+  const CANVAS_SIZE = 400;
   const color = '#000'
-  const matchesMd = useMediaQuery("(min-width: 768px)");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [results, setResults] = useAtom(resultsAtom);
-  const [final, setFinal] = useAtom(finalState);
-  const CANVAS_SIZE = 400;
-  const { width, height } = useWindowSize()
-  const [winner, setWinner] = useAtom(winnerAtom);
   const [audience, setAudience] = useState(0);
 
   function handleDrawResult() {
-    // if (!gameState || !results) return;
-    console.log(gameState?.drawings)
-    gameState?.drawings.forEach((drawing, i) => {
-      let canvas = i == winner && canvasRef.current
+    if (!results) return;
+    console.log(results.gameState.drawings)
+    results.gameState.drawings.forEach((drawing, i) => {
+      let canvas = i == results.winner && canvasRef.current
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -42,8 +33,8 @@ export default function Results() {
     })
   }
   useEffect(() => {
-    if (!gameState) return;
-    let clientArray = Array.from(gameState.clients)
+    if (!results) return;
+    let clientArray = Array.from(results.gameState.clients)
     let audienceCount = 0;
     clientArray.filter((client) => {
       if (client[1] == ClientType.Audience) {
@@ -51,9 +42,9 @@ export default function Results() {
       }
     })
     console.log("AUDIENCE COUNT !!!", audienceCount);
-    setAudience(audienceCount); // minus two for gamers
+    setAudience(audienceCount);
     handleDrawResult();
-    console.log({ winner, final })
+    console.log({ results })
   }, [])
 
   return (
@@ -68,33 +59,35 @@ export default function Results() {
           y: height / 2,
         }}
       /> */}
-      <div className="flex flex-col items-center justify-center">
-        <div className="flex flex-col md:flex-row items-center justify-center">
-          <div className="flex flex-col w-full h-full">
-            <p className="text-xl p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>WINNER</strong></p>
-            <p className="text-md p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>{winner && GamerChoice[winner]}</strong></p>
-            <canvas
-              ref={canvasRef}
-              height={CANVAS_SIZE}
-              width={CANVAS_SIZE}
-              className='bg-white duration-200 mb-3 border-8 rounded-lg border-slate-900 border-solid'
-            />
+      {results &&
+        <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col md:flex-row items-center justify-center">
+            <div className="flex flex-col w-full h-full">
+              <p className="text-xl p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>WINNER</strong></p>
+              <p className="text-md p-3 text-center bg-secondary rounded-lg m-3 text-black"><strong>{results.winner && GamerChoice[results.winner]}</strong></p>
+              <canvas
+                ref={canvasRef}
+                height={CANVAS_SIZE}
+                width={CANVAS_SIZE}
+                className='bg-white duration-200 mb-3 border-8 rounded-lg border-slate-900 border-solid'
+              />
+            </div>
           </div>
+          <div className="stats lg:stats-horizontal shadow bg-slate-800">
+            <div className="stat">
+              <div className="stat-title">Audience</div>
+              <div className="stat-value">{`${results?.innerResult.votes.length} / ${audience}`}</div>
+              <div className="stat-desc">/ of people that voted</div>
+            </div>
+            <div className="stat">
+              <div className="stat-title">Prompt</div>
+              <div className="stat-value">{results.gameState.prompt.name}</div>
+              <div className="stat-desc">What had to be drawn</div>
+            </div>
+          </div>
+          <div className="text-sm text-white my-3">P.S. Thank you for the data...</div>
         </div>
-        <div className="stats lg:stats-horizontal shadow bg-slate-800">
-          <div className="stat">
-            <div className="stat-title">Audience</div>
-            <div className="stat-value">{`${final?.result.votes.length} / ${audience}`}</div>
-            <div className="stat-desc">/ of people that voted</div>
-          </div>
-          <div className="stat">
-            <div className="stat-title">Prompt</div>
-            <div className="stat-value">{gameState?.prompt.name}</div>
-            <div className="stat-desc">What had to be drawn</div>
-          </div>
-        </div>
-        <div className="text-sm text-white my-3">P.S. Thank you for the data...</div>
-      </div>
+      }
     </div>
   )
 }

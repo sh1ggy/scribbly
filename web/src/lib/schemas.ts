@@ -1455,7 +1455,7 @@ export const DRAWING_TIME: number = 20000;
 
 export const RESULTS_DRUMROLL: number = 5000;
 
-export const VOTING_TIME: number = 7000;
+export const VOTING_TIME: number = 5000;
 
 export interface ICoord extends BebopRecord {
   x: number;
