@@ -177,6 +177,18 @@ async fn handle_internal_msg<'a>(
 
             finalise_game(game_ref.clone()).await;
 
+
+            let gamerA = Vec::new();
+            let gamerB = Vec::new();
+
+            let mut msg = Message::Binary(get_dto_binary(
+                common::Empty {},
+                api::ServerMessageType::NoGameState as u32,
+            ));
+
+            #[cfg(windows)]
+            {
+
             let output = Command::new("C:/Users/anhad/miniconda3/envs/ml/python.exe ")
                 .args(&["d:/scribbly/server/scribbly.py"])
                 .output()
@@ -197,10 +209,9 @@ async fn handle_internal_msg<'a>(
                 .map(|x| x.round() as u32)
                 .collect::<Vec<u32>>();
 
-            let mut msg = Message::Binary(get_dto_binary(
-                common::Empty {},
-                api::ServerMessageType::NoGameState as u32,
-            ));
+
+            }
+
             {
                 if let Some(game) = &mut *game_ref.lock().unwrap() {
                     let votes_clone = (&game.votes.clone());
@@ -216,15 +227,6 @@ async fn handle_internal_msg<'a>(
             }
             broadcast_message(clients_ref, &msg).await;
 
-            // println!("{:?}", data);
-
-            // println!(
-            //     "status: {}, {}",
-            //     output.status,
-            //     str::from_utf8(&output.stdout).unwrap()
-            // );
-
-            // %windir%\System32\cmd.exe "/K" C:\Users\anhad\miniconda3\Scripts\activate.bat C:\Users\anhad\miniconda3
         }
     }
 }
