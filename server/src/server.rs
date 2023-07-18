@@ -121,7 +121,6 @@ impl<'a> Server<'a> {
     }
 }
 
-// #[derive(Deserialize)]
 pub type kVals = [Vec<u32>; 2];
 
 use std::str;
@@ -204,8 +203,7 @@ async fn handle_internal_msg<'a>(
             ));
             {
                 if let Some(game) = &mut *game_ref.lock().unwrap() {
-
-                let votes_clone = (&game.votes.clone());
+                    let votes_clone = (&game.votes.clone());
                     let result = api::ResultsSTG {
                         id: game.id,
                         votes: SliceWrapper::Cooked(&votes_clone),
@@ -267,52 +265,49 @@ async fn save_results_to_csv(
             csv_data.push(stroke_def);
         }
 
-        let mut file = tokio::fs::OpenOptions::new()
+        let file_handle = tokio::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .append(true)
             .open("./results.csv")
-            .await
-            .unwrap();
-        // Create a `BufWriter` for efficient writing
-        let mut writer = BufWriter::new(file);
+            .await;
+        match file_handle {
+            Ok(file) => {
+                // Create a `BufWriter` for efficient writing
+                let mut writer = BufWriter::new(file);
 
-        // let mut csv_string = String::from("\n");
-        // csv_string.push_str(&serde_json::to_string(&csv_data).unwrap());
-        let csv_string = serde_json::to_string(&csv_data).unwrap();
-        //Drawing, key, word, game_id, vote
-        let gamer_id = api::GamerChoice::try_from((gamer_id as u32) + 1).unwrap();
-        let sum_count = votes.iter().count();
-        let votes_for_gamer = votes.iter().filter(|v| (**v == gamer_id.clone())).count();
-        println!("{:?} got {:?} votes", gamer_id, votes_for_gamer);
-        let mut votes_ratio = 0.0;
-        if votes_for_gamer != 0 {
-            votes_ratio = votes_for_gamer as f32 / sum_count as f32;
+                // let mut csv_string = String::from("\n");
+                // csv_string.push_str(&serde_json::to_string(&csv_data).unwrap());
+                let csv_string = serde_json::to_string(&csv_data).unwrap();
+                //Drawing, key, word, game_id, vote
+                let gamer_id = api::GamerChoice::try_from((gamer_id as u32) + 1).unwrap();
+                let sum_count = votes.iter().count();
+                let votes_for_gamer = votes.iter().filter(|v| (**v == gamer_id.clone())).count();
+                println!("{:?} got {:?} votes", gamer_id, votes_for_gamer);
+                let mut votes_ratio = 0.0;
+                if votes_for_gamer != 0 {
+                    votes_ratio = votes_for_gamer as f32 / sum_count as f32;
+                }
+
+                println!("Votes ratio: {:?}", votes_ratio);
+
+                let csv_entry = format!(
+                    "\n\"{}\",{},{}",
+                    csv_string,
+                    prompt.class.clone(),
+                    votes_ratio
+                );
+                println!("CSV entry: {:?}", csv_entry);
+
+                writer.write(csv_entry.as_bytes()).await.unwrap();
+                writer.flush().await.unwrap();
+            }
+            Err(e) => {
+                println!("Error opening file: {}", e);
+                return;
+            }
         }
 
-        println!("Votes ratio: {:?}", votes_ratio);
-        // let csv_entry = format!(
-        //     "{},{},{},{},{}",
-        //     csv_string,
-        //     prompt.class.clone(),
-        //     prompt.name.clone(),
-        //     game_id,
-        //     votes_ratio
-        // );
-
-        // An empty result looks like this, make sure to forfiet the player
-        // "[]",315,0
-
-        let csv_entry = format!(
-            "\n\"{}\",{},{}",
-            csv_string,
-            prompt.class.clone(),
-            votes_ratio
-        );
-        println!("CSV entry: {:?}", csv_entry);
-
-        writer.write(csv_entry.as_bytes()).await.unwrap();
-        writer.flush().await.unwrap();
     }
 }
 
