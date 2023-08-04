@@ -34,7 +34,6 @@ For any unforeseen issue, please contact us directly. Also please note that ther
 
 ### Future
 - [ ] TODO: completely flush out tcp websokcet connections on server side on reset (except admin)
-- [ ] Refac for toastProvider to jotai
 - [ ] Use probability values instead of k values in ml
 - [ ] Find outsourced ai host like huggingface,  
 - [ ] Custom classes
