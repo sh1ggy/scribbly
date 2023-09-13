@@ -31,12 +31,13 @@ For any unforeseen issue, please contact us directly. Also please note that ther
 - [x] Fix admin portal, add toast that it worked
 - [x] Clear canvas
 - [ ] End to end testing that votes acutally work
+- [ ] Use probability values instead of k values in ml
 
 ### Future
 - [ ] TODO: completely flush out tcp websokcet connections on server side on reset (except admin)
-- [ ] Refac for toastProvider to jotai
-- [ ] Use probability values instead of k values in ml
+- [ ] Fix the sampling algorithm in the ai to more like https://www.kaggle.com/code/inversion/getting-started-viewing-quick-draw-doodles-etc OR simply apply all raw data to current simplification
 - [ ] Find outsourced ai host like huggingface,  
 - [ ] Custom classes
+- [ ] Actor pattern refactor server side and making more internalMessages
 - [ ] Resolve TODOs
 

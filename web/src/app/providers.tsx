@@ -2,6 +2,7 @@
 
 import { Provider } from "jotai"
 import { GlobalToastProvider } from "@/components/Toast"
+import { GlobalErrorProvider } from "@/hooks/useError"
 
 export default function Providers({
   children, // will be a page or nested layout
@@ -10,9 +11,11 @@ export default function Providers({
 }) {
   return (
     <GlobalToastProvider>
-      <Provider>
-        {children}
-      </Provider>
+      <GlobalErrorProvider>
+        <Provider>
+          {children}
+        </Provider>
+      </GlobalErrorProvider>
     </GlobalToastProvider>
   )
 }

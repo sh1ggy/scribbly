@@ -8,6 +8,7 @@ import { resultsAtom, gameStateAtom, userStateAtom, audienceCountAtom } from "@/
 import { deserialize } from "@/utils/bopUtils";
 import { useTimer } from "react-timer-hook";
 import { useToast } from "@/hooks/useToast";
+import { useError } from "@/hooks/useError";
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export interface Results {
   innerResult: IResultsSTG,
@@ -21,10 +22,10 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const [gameState, setGameState] = useAtom(gameStateAtom);
-  const gameState2 = useAtomValue(gameStateAtom);
   const [user, setUser] = useAtom(userStateAtom);
   const [results, setResults] = useAtom(resultsAtom);
   const [voteCount, setVoteCount] = useState(0);
+  const setErrorMessage = useError();
   const setToast = useToast();
   const audience = useAtomValue(audienceCountAtom);
 
@@ -79,7 +80,9 @@ export default function DashboardLayout({
   }, [gameState?.stage]);
 
   const error = (event: Event) => {
-    console.error('WebSocket error:', error);
+    console.error('WebSocket error:', {event});
+    // Defs doesnt contain very much relevant info actually, only status codes and if its an ending frame
+    setErrorMessage('WebSocket error');
   }
 
   const matches = useMediaQuery("(min-width: 343px)");

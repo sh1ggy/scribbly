@@ -2,6 +2,7 @@ mod client_connection;
 mod handlers;
 
 use serde::{Deserialize, Serialize};
+use tungstenite::protocol::CloseFrame;
 
 use std::{
     collections::HashMap,
@@ -21,7 +22,7 @@ use tokio::{
 use futures_util::{SinkExt, StreamExt};
 use tokio_tungstenite::{
     accept_async,
-    tungstenite::{Error, Message, Result},
+    tungstenite::{Error, Message},
 };
 
 // Just so we dont have to type out crate::ml every time
@@ -62,6 +63,7 @@ pub struct GameState {
     prompt: Prompt,
     last_stage_time: u128,
     votes: Vec<api::GamerChoice>,
+    client_counter: u32,
 }
 
 pub enum InternalMessage {
@@ -101,13 +103,40 @@ impl<'a> Server<'a> {
 
         // Tokio threads need an async task in them for them to be considerd async,
         tokio::spawn(async move {
-            let mut inner = InnerConn{
+            let mut inner = InnerConn {
                 clients_ref: cons_ref.clone(),
                 game_ref: game_ref.clone(),
             };
             loop {
                 let msg = internal_rx.recv().await.unwrap();
-                handle_internal_msg(msg, &mut inner).await;
+
+                {
+                    let mut maybe_exit = None;
+
+                    let res = handle_internal_msg(msg, &mut inner).await;
+                    match res {
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!("Error handling internal message: {}", e);
+                            // This closeframe just closes the websocket without any error message
+                            let closing_frame = CloseFrame {
+                                code: tungstenite::protocol::frame::coding::CloseCode::Abnormal,
+                                reason: "Error handling internal message".into(),
+                            };
+
+                            let close_msg = Message::Close(Some(closing_frame));
+                            maybe_exit = Some(close_msg);
+                        }
+                    }
+
+                    if let Some(close_msg) = maybe_exit {
+                        {
+                            let mut game = inner.game_ref.lock().unwrap();
+                            *game = None;
+                        }
+                        inner.broadcast_message(&close_msg).await;
+                    }
+                }
             }
         });
 
@@ -123,16 +152,21 @@ impl<'a> Server<'a> {
                 inner,
             };
 
+            // tokio::spawn(handle_connection(stream, cc));
             tokio::spawn(accept_connection(stream, cc));
         }
     }
 }
 
 use std::str;
-async fn handle_internal_msg<'a>(msg: InternalMessage, inner: &mut InnerConn) {
+async fn handle_internal_msg<'a>(
+    msg: InternalMessage,
+    inner: &mut InnerConn,
+) -> anyhow::Result<()> {
     match msg {
         InternalMessage::CountDownLobby => {
             println!("TRansitioning to AudienceLobby and waiting");
+            anyhow::bail!("Can i get uuuhh fuggin ");
             {
                 if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     game.stage = api::Stage::AudienceLobby;
@@ -145,9 +179,17 @@ async fn handle_internal_msg<'a>(msg: InternalMessage, inner: &mut InnerConn) {
 
             println!("TRansitioning to Drawing");
             {
-                if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
-                    game.stage = api::Stage::Drawing;
-                    game.last_stage_time = time();
+                let thing = (inner.game_ref.lock().map_err(|e| e.to_string()));
+                match thing {
+                    Ok(mut game) => {
+                        if let Some(game) = &mut *game {
+                            game.stage = api::Stage::Drawing;
+                            game.last_stage_time = time();
+                        }
+                    }
+                    Err(e) => {
+                        anyhow::bail!("MutexError: {}", e);
+                    }
                 }
             }
 
@@ -224,6 +266,7 @@ async fn handle_internal_msg<'a>(msg: InternalMessage, inner: &mut InnerConn) {
             inner.broadcast_message(&msg).await;
         }
     }
+    Ok(())
 }
 
 async fn finalise_game(game_ref: Arc<Mutex<Option<GameState>>>) {
@@ -315,14 +358,16 @@ fn time() -> u128 {
 }
 async fn accept_connection(stream: TcpStream, conn: ClientConnection) {
     if let Err(e) = handle_connection(stream, conn).await {
-        match e {
-            Error::ConnectionClosed | Error::Protocol(_) | Error::Utf8 => (),
-            err => println!("Error processing connection: {}", err),
-        }
+        // match e {
+        //     Error::ConnectionClosed | Error::Protocol(_) | Error::Utf8 => (),
+        //     err => println!("Error processing connection: {}", err),
+        // }
+
+            println!("Error processing connection: {}", e);
     }
 }
 
-async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Result<()> {
+async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> anyhow::Result<()> {
     println!("New TCP connection from {}", stream.peer_addr()?);
     let ws_stream = accept_async(stream).await?;
 
@@ -393,7 +438,7 @@ async fn handle_connection(stream: TcpStream, mut conn: ClientConnection) -> Res
                 else {
                     conn.remove_client(conn.client_id).await;
                     ws_sender.close().await?;
-                    println!("No message from rx channel, closing connection");
+                    println!("No message from rx channel meaning theres no refs to this clients sender {}, closing connection", conn.client_id);
                     break;
                 }
             },
