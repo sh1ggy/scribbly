@@ -19,3 +19,7 @@ anyhow = "1.0.72"
 
 [build-dependencies]
 bebop-tools = "2.8.6"
+
+[features]
+default = ["ai"]
+ai = []

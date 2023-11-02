@@ -63,6 +63,11 @@ export default function DashboardLayout({
         setToast("No game found redirecting to home page");
         router.push('/');
         return;
+      case ServerMessageType.ServerError:
+        console.log('Server error');
+        setErrorMessage('Server error');
+        router.push('/');
+        return;
     }
   }
 

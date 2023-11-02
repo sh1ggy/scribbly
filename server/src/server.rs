@@ -118,13 +118,11 @@ impl<'a> Server<'a> {
                         Ok(_) => {}
                         Err(e) => {
                             println!("Error handling internal message: {}", e);
-                            // This closeframe just closes the websocket without any error message
-                            let closing_frame = CloseFrame {
-                                code: tungstenite::protocol::frame::coding::CloseCode::Abnormal,
-                                reason: "Error handling internal message".into(),
+                            let server_error = api::ServerError {
+                                msg: &String::from("Error handling internal message")
                             };
-
-                            let close_msg = Message::Close(Some(closing_frame));
+                            let bin = get_dto_binary(server_error, api::ServerMessageType::ServerError as u32);
+                            let close_msg = Message::Binary(bin);
                             maybe_exit = Some(close_msg);
                         }
                     }
@@ -166,7 +164,7 @@ async fn handle_internal_msg<'a>(
     match msg {
         InternalMessage::CountDownLobby => {
             println!("TRansitioning to AudienceLobby and waiting");
-            anyhow::bail!("Can i get uuuhh fuggin ");
+            // anyhow::bail!("Can i get uuuhh fuggin ");
             {
                 if let Some(game) = &mut *inner.game_ref.lock().unwrap() {
                     game.stage = api::Stage::AudienceLobby;
@@ -227,7 +225,7 @@ async fn handle_internal_msg<'a>(
                 api::ServerMessageType::NoGameState as u32,
             ));
 
-            #[cfg(windows)]
+            #[cfg(ai)]
             {
                 let output = Command::new("C:/Users/anhad/miniconda3/envs/ml/python.exe ")
                     .args(&["d:/scribbly/server/scribbly.py"])
@@ -235,10 +233,10 @@ async fn handle_internal_msg<'a>(
                     .await
                     .unwrap(); //Handle error here
 
-                let output = str::from_utf8(&output.stdout).unwrap();
+                let output = str::from_utf8(&output.stdout)?;
                 println!("Got Ml Result: {}", output);
 
-                let data: [Vec<f32>; 2] = serde_json::from_str(output).unwrap();
+                let data: [Vec<f32>; 2] = serde_json::from_str(output)?;
 
                 let gamerA = data[0]
                     .iter()

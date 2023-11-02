@@ -43,6 +43,11 @@ async fn main() {
     //     output.status,
     // );
 
+    #[cfg(feature = "ai")]
+    {
+        println!("Hey man");
+    }
+
     server.run().await;
 
     println!("Closing server");

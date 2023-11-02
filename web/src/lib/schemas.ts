@@ -142,6 +142,7 @@ export enum ServerMessageType {
   Clear = 9,
   Restart = 28,
   ResultsSTG = 33,
+  ServerError = 99,
 }
 
 export interface IDrawUpdate extends BebopRecord {
@@ -1446,6 +1447,97 @@ export class FinishStroke implements IFinishStroke {
       gamer: field0,
     };
     return new FinishStroke(message);
+  }
+}
+
+export interface IServerError extends BebopRecord {
+  msg: string;
+}
+
+export class ServerError implements IServerError {
+  public msg: string;
+
+  constructor(record: IServerError) {
+    this.msg = record.msg;
+  }
+
+  /**
+   * Serializes the current instance into a JSON-Over-Bebop string
+   */
+  public toJSON(): string {
+    return ServerError.encodeToJSON(this);
+  }
+
+  /**
+   * Serializes the specified object into a JSON-Over-Bebop string
+   */
+  public static encodeToJSON(record: IServerError): string {
+    return JSON.stringify(record, BebopJson.replacer);
+  }
+
+  /**
+   * Validates that the runtime types of members in the current instance are correct.
+   */
+  public validateTypes(): void {
+    ServerError.validateCompatibility(this);
+  }
+
+  /**
+   * Validates that the specified dynamic object can become an instance of {@link ServerError}.
+   */
+  public static validateCompatibility(record: IServerError): void {
+    BebopTypeGuard.ensureString(record.msg)
+  }
+
+  /**
+   * Unsafely creates an instance of {@link ServerError} from the specified dynamic object. No type checking is performed.
+   */
+  public static unsafeCast(record: any): IServerError {
+      return new ServerError(record);
+  }
+
+  /**
+   * Creates a new {@link ServerError} instance from a JSON-Over-Bebop string. Type checking is performed.
+   */
+  public static fromJSON(json: string): IServerError {
+    if (typeof json !== 'string' || json.trim().length === 0) {
+      throw new BebopRuntimeError(`ServerError.fromJSON: expected string`);
+    }
+    const parsed = JSON.parse(json, BebopJson.reviver);
+    ServerError.validateCompatibility(parsed);
+    return ServerError.unsafeCast(parsed);
+  }
+  public encode(): Uint8Array {
+    return ServerError.encode(this);
+  }
+
+  public static encode(record: IServerError): Uint8Array {
+    const view = BebopView.getInstance();
+    view.startWriting();
+    ServerError.encodeInto(record, view);
+    return view.toArray();
+  }
+
+  public static encodeInto(record: IServerError, view: BebopView): number {
+    const before = view.length;
+    view.writeString(record.msg);
+    const after = view.length;
+    return after - before;
+  }
+
+  public static decode(buffer: Uint8Array): IServerError {
+    const view = BebopView.getInstance();
+    view.startReading(buffer);
+    return ServerError.readFrom(view);
+  }
+
+  public static readFrom(view: BebopView): IServerError {
+    let field0: string;
+    field0 = view.readString();
+    let message: IServerError = {
+      msg: field0,
+    };
+    return new ServerError(message);
   }
 }
 

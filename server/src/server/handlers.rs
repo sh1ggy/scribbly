@@ -73,29 +73,6 @@ async fn handle_admin_message(
                     class: cat as u32,
                 };
 
-                {
-                    let mut maybe_exit = None;
-                    if let Some(yes_game) = conn.inner.game_ref.lock().unwrap().as_mut() {
-                        if (yes_game.stage != api::Stage::Results) {
-                            println!("Game is not in results stage, resetting all clients start");
-                            let closing_frame = CloseFrame {
-                                code: tungstenite::protocol::frame::coding::CloseCode::Abnormal,
-                                reason: "Game is not in results stage, resetting all clients start"
-                                    .into(),
-                            };
-
-                            let close_msg = Message::Close(Some(closing_frame));
-                            maybe_exit = Some(close_msg);
-                        }
-                    }
-                    
-                    if let Some(close_msg) = maybe_exit {
-                        // This might work far better than the restart message
-                        conn.inner.broadcast_message(&close_msg).await;
-                        return;
-                    }
-                }
-
                 // unscope the mutex before await because the future can be across 2 threads
                 {
                     let mut game = conn.inner.game_ref.lock().unwrap();

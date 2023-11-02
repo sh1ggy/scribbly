@@ -27,6 +27,8 @@ enum ServerMessageType {
   // VotingSTG = 31; 
   // JudgingSTG = 32; 
   ResultsSTG = 33;
+
+  ServerError = 99;
 }
 
 struct DrawUpdate {
@@ -90,4 +92,8 @@ struct ClientTypeDTO {
 
 struct FinishStroke {
   GamerChoice gamer;
+}
+
+struct ServerError {
+  string msg;
 }
