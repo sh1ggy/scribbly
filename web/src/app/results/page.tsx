@@ -19,6 +19,7 @@ export default function Results() {
   const [isDraw, setIsDraw] = useState(false);
   const [scores, setScores] = useState<ScoreDict>({ [GamerChoice.GamerA]: 0, [GamerChoice.GamerB]: 0, [GamerChoice.Neither]: 0 });
   const [winner, setWinner] = useState<GamerChoice>(GamerChoice.Neither);
+  const [audienceVotes, setAudienceVotes] = useState<number>(0);
 
   function handleGameResult() {
     if (!results) return;
@@ -86,6 +87,8 @@ export default function Results() {
       })
     })
 
+    setAudienceVotes(results.innerResult.votes.filter((v) => v == winner).length);
+
   }
 
   useEffect(() => {
@@ -127,7 +130,7 @@ export default function Results() {
           <div className="stats lg:stats-horizontal shadow bg-slate-800">
             <div className="stat">
               <div className="stat-title">Audience</div>
-              <div className="stat-value">{`${votedForWinnerCount} / ${getAudienceFromGameState(results.gameState)}`}</div>
+              <div className="stat-value">{`${audienceVotes} / ${getAudienceFromGameState(results.gameState)}`}</div>
               <div className="stat-desc">/ of people that voted</div>
             </div>
             <div className="stat">
