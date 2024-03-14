@@ -54,6 +54,11 @@ dependencies:
     specifier: 5.1.5
     version: 5.1.5
 
+devDependencies:
+  bebop-tools:
+    specifier: 2.8.7
+    version: 2.8.7
+
 packages:
 
   /@alloc/quick-lru@5.2.0:
@@ -268,6 +273,12 @@ packages:
   /balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: false
+
+  /bebop-tools@2.8.7:
+    resolution: {integrity: sha512-gKhtopH34/pqoIBuFWYavUmpZypRo9wU2UtOYeyAIuD9g6elgwgnL4LrqyvBaRg9XHmE0tTYjOGkbuGzLhXpBA==}
+    hasBin: true
+    requiresBuild: true
+    dev: true
 
   /bebop@2.8.6:
     resolution: {integrity: sha512-Zvnkm+f7TlT2tI2OMHBmQstotyAQ15z3G52fwozP87iSTi8Y18/q3fWRyvmBBAj/f93hUFzQ/4rNNIESZP06DQ==}

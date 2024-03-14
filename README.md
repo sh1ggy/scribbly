@@ -40,4 +40,4 @@ For any unforeseen issue, please contact us directly. Also please note that ther
 - [ ] Custom classes
 - [ ] Actor pattern refactor server side and making more internalMessages
 - [ ] Resolve TODOs
-
+- [ ] newer versions of bebop-tools (v3.0.0^) require a bebop.json instead of cmd options
