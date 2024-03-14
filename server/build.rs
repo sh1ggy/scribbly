@@ -1,6 +1,6 @@
 use bebop::BuildConfig;
 use bebop_tools as bebop;
-use std::{path::PathBuf, env};
+use std::path::PathBuf;
 fn main() {
     bebop::download_bebopc(PathBuf::from("target").join("bebopc"));
     bebop::build_schema_dir(
